@@ -52,8 +52,13 @@ ActiveRecord::Schema.define(version: 2020_10_05_130712) do
   end
 
   add_foreign_key "paths", "paths"
+  add_foreign_key "paths", "paths", on_delete: :cascade
   add_foreign_key "rdirs", "paths"
+  add_foreign_key "rdirs", "paths", on_delete: :cascade
   add_foreign_key "repo_paths", "paths"
+  add_foreign_key "repo_paths", "paths", on_delete: :cascade
   add_foreign_key "repo_paths", "repos"
+  add_foreign_key "repo_paths", "repos", on_delete: :cascade
   add_foreign_key "rfiles", "paths"
+  add_foreign_key "rfiles", "paths", on_delete: :cascade
 end

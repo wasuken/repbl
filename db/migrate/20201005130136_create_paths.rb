@@ -6,5 +6,6 @@ class CreatePaths < ActiveRecord::Migration[6.0]
 
       t.timestamps
     end
+    add_foreign_key :paths, :paths, on_delete: :cascade
   end
 end
