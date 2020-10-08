@@ -3,14 +3,20 @@
 // It will render "Hello Elm!" within the page.
 
 import {
-  Elm
-} from '../Main'
+	Elm
+} from '../Index'
 
 document.addEventListener('DOMContentLoaded', () => {
-  const target = document.createElement('div')
+	const target = document.createElement('div')
 
-  document.body.appendChild(target)
-  Elm.Main.init({
-    node: target
-  })
+	const csrfToken = document.head.querySelector('meta[name="csrf-token"]').content;
+	console.log(csrfToken);
+
+	document.body.appendChild(target)
+	let app = Elm.Index.init({
+		node: target,
+		flags: csrfToken
+	});
+
+	app.ports.csrfToken.send(csrfToken);
 })

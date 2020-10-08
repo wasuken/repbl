@@ -45,11 +45,15 @@ module ReposHelper
     def insert(zfs)
       # puts "--- Debug self.path => #{@path}, zfs.path => #{zfs.path}"
       # root処理
-      if (@type == :root && @children.size.zero?)
+      if @type == :root && @children.size.zero?
         @children.push(zfs)
       else
+        # 同じものが存在しているばあい
+        if @path == zfs.path
+          # puts "Already exist path(#{zfs.path})."
+          return
         # 直下の場合
-        if File.join(zfs.path.split('/')[0..-2] + [""]) == @path
+        elsif File.join(zfs.path.split('/')[0..-2] + [""]) == @path
           @children.push(zfs)
         # 途中の道筋である場合
         elsif @children.select{|x| x.type == :directory}
@@ -96,13 +100,13 @@ module ReposHelper
   end
 
   def remote_zip_to_zfs(url, file_match_ptn=".*", exc_ptns=["/\..*"])
-    open(URI.escape(url)) do |file|
+    URI.open(url) do |file|
       root = ZDir.new(:root, "root")
       Zip::File.open_buffer(file.read) do |zf|
         zf.each do |entry|
           e_name_utf8 = entry.name.force_encoding('UTF-8')
-          if (entry.ftype == :file && e_name_utf8.match(file_match_ptn)) ||
-             (entry.ftype == :directory && !exc_match(entry.name, exc_ptns))
+          if (entry.ftype == :file && !e_name_utf8.match(file_match_ptn)) ||
+             (entry.ftype == :directory && exc_match(entry.name, exc_ptns))
             next
           end
           if entry.ftype == :directory && e_name_utf8.match(file_match_ptn)
@@ -124,7 +128,7 @@ module ReposHelper
     else
       Rdir.create(path_id: path.id)
       zfs.children.select{|x| x.type == :directory}.each do |z|
-        dir_hash_insert(z, path.id)
+        zfs_insert(z, path.id)
       end
     end
   end
