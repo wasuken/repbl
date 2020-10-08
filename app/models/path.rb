@@ -1,3 +1,3 @@
 class Path < ApplicationRecord
-  belongs_to :path
+  belongs_to :path, optional: true
 end

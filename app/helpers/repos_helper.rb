@@ -101,6 +101,7 @@ module ReposHelper
 
   def remote_zip_to_zfs(url, file_match_ptn=".*", exc_ptns=["/\..*"])
     URI.open(url) do |file|
+      # なんでここに非Factoryが!?
       root = ZDir.new(:root, "root")
       Zip::File.open_buffer(file.read) do |zf|
         zf.each do |entry|
@@ -121,15 +122,40 @@ module ReposHelper
     end
   end
   def zfs_insert(zfs, repo_id, parent_id = nil)
-    path = Path.new(path_id: parent_id, name: zfs.path)
+    path = Path.create(path_id: parent_id, name: zfs.path)
     RepoPath.create(repo_id: repo_id, path_id: path.id)
     if zfs.type == :file
       Rfile.create(path_id: path.id, contents: zfs.contents)
     else
       Rdir.create(path_id: path.id)
-      zfs.children.select{|x| x.type == :directory}.each do |z|
-        zfs_insert(z, path.id)
+      zfs.children.each do |z|
+        zfs_insert(z, repo_id, path.id)
       end
     end
+  end
+  def repos_to_zfs(repo_id)
+    dirs = Rdir.joins(:path)
+             .joins("inner join repo_paths on repo_paths.path_id = paths.id")
+             .where(repo_paths: {repo_id: params[:id]})
+             .select("paths.name as name")
+             .all
+             .sort{|a, b| a.name.split('/').select(&:empty?).size <=> b.name.split('/').select(&:empty?).size}
+    files = Rfile.joins(:path)
+              .joins("inner join repo_paths on repo_paths.path_id = paths.id")
+              .where(repo_paths: {repo_id: params[:id]})
+              .select("paths.name as name, rfiles.contents as contents")
+              .all
+              .sort{|a, b| a.name.split('/').select(&:empty?).size <=> b.name.split('/').select(&:empty?).size}
+    root = ZFileSystem.build(:directory, dirs[0].name)
+    dirs = dirs[1..-1]
+    dirs.each do |d|
+      root.insert(ZFileSystem.build(:directory, d.name))
+    end
+    files.each do |f|
+      zfs = ZFileSystem.build(:file, f.name)
+      zfs.contents = f.contents
+      root.insert(zfs)
+    end
+    root
   end
 end

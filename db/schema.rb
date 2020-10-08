@@ -14,7 +14,7 @@ ActiveRecord::Schema.define(version: 2020_10_05_130712) do
 
   create_table "paths", force: :cascade do |t|
     t.string "name"
-    t.integer "path_id", null: false
+    t.integer "path_id"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
     t.index ["path_id"], name: "index_paths_on_path_id"
@@ -52,7 +52,6 @@ ActiveRecord::Schema.define(version: 2020_10_05_130712) do
   end
 
   add_foreign_key "paths", "paths"
-  add_foreign_key "paths", "paths", on_delete: :cascade
   add_foreign_key "rdirs", "paths"
   add_foreign_key "rdirs", "paths", on_delete: :cascade
   add_foreign_key "repo_paths", "paths"
