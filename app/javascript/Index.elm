@@ -66,7 +66,7 @@ view model =
         , h3 []
             [ text "一覧"]
         , ul []
-            (List.map (\p -> li [] [ a [ href ("/repo/" ++ (String.fromInt p.id)) ] [text ("title: " ++ p.title)] ]) model.projects)
+            (List.map (\p -> li [] [ a [ href ("/repos/" ++ (String.fromInt p.id)) ] [text ("title: " ++ p.title)] ]) model.projects)
         ]
 
 

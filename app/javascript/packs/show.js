@@ -4,18 +4,23 @@
 
 import {
 	Elm
-} from '../Index'
+} from '../Show';
 
 document.addEventListener('DOMContentLoaded', () => {
-	const target = document.createElement('div')
+	const target = document.createElement('div');
 
 	const csrfToken = document.head.querySelector('meta[name="csrf-token"]').content;
+	const repoId = location.href.split('/').slice(-1)[0];
+	const param = {
+		repoId: repoId,
+		csrfToken: csrfToken
+	};
 
-	document.body.appendChild(target)
-	let app = Elm.Index.init({
+	document.body.appendChild(target);
+	let app = Elm.Show.init({
 		node: target,
-		flags: csrfToken
+		flags: param
 	});
 
-	app.ports.csrfToken.send(csrfToken);
+	app.ports.param.send(param);
 })

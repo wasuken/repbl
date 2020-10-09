@@ -22,3 +22,52 @@ Things you may want to cover:
 * Deployment instructions
 
 * ...
+
+## 突発Memo
+
+後でけす。
+
+### 修正するかも?
+
+* ParseしやすいJSON、もといRails側のzfsの構造を修正する。
+
+* fileのcontentsを含めた現状のJSONから、含めずにpathもしくはpath_idをふくむJSONへと変更し、fileはpaths/files_controllerから
+
+
+### とりあえず実装する機能Memo(Show.elm)
+
+#### page読込時
+
+1. JSON取得
+
+2. JSONからdirtreeを生成。
+
+#### dirtree event 一覧
+
+##### file on click
+
+中央辺りにcontentsを出力。
+
+##### dir on click
+
+とくに考えてない
+
+#### model
+
+* dirJson : ?
+
+* fileInfo : FileInfo 選択されているfile。表示する用。
+
+	* FileInfo
+
+			* path
+
+			* title
+
+			* contents
+
+#### message
+
+* ChangeFile
+
+* ViewDirectory
