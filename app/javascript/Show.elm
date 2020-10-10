@@ -1,11 +1,15 @@
 port module Show exposing (..)
 
 import Browser
-import Html exposing (..)
-import Html.Attributes exposing (..)
-import Html.Events exposing (..)
+import Html as HTML exposing (Html)
+import List.Extra as LE
 import Http
 import Json.Decode as D exposing (Decoder, field, int, list, map3, string)
+import Element as E exposing (..)
+import Element.Background as Background
+import Element.Border as Border
+import Element.Font as Font
+
 
 -- MODEL
 
@@ -43,16 +47,78 @@ init =
 
 -- VIEW
 
+grey : Color
+grey =
+    rgb255 0xc0 0xc0 0xc0
 
-view : Model -> Html Message
+
+-- typeとpathしか取得できない。
+attrGetAt : Int -> NaturalJson -> String -> String
+attrGetAt n json default =
+    case json of
+       Object lst ->
+          case (LE.getAt n lst) of
+             Just (k, v) ->
+                case v of
+                   String s -> s
+
+                   _ -> default
+
+             _ -> default
+
+       _ -> default
+
+-- Directoryのchildrenを取得するやつ。
+-- 本当なら上記関数と統合したかったが、無理だった。
+attrGetChildren : NaturalJson -> List NaturalJson
+attrGetChildren json =
+    case json of
+       Object lst ->
+            case (LE.getAt 2 lst) of
+               Just (k, v) ->
+                  case v of
+                     List l -> l
+                     _ -> []
+               Nothing -> []
+       _ -> []
+
+naturalJsonToElement : NaturalJson -> Int -> (E.Element msg)
+naturalJsonToElement fs level =
+    let tp = attrGetAt 0 fs "unknown"
+        path = case tp of
+             "file" -> (attrGetAt 1 fs "unknown")
+             _ -> (attrGetAt 1 fs "unknown")
+        children = case tp of
+                      "directory" ->
+                            List.map (\child -> naturalJsonToElement child (level + 1)) (attrGetChildren fs)
+                      _ -> []
+        contents = case tp of
+                     "file" ->
+                         attrGetAt 2 fs ""
+                     _ -> ""
+    in column [] ([ textColumn [ paddingEach { top = 0, left = (10 * level), right = 0, bottom = 0 }  ]
+                               [ text path ]  ] ++ children)
+
+
+
+view : Model -> Html msg
 view model =
-    -- The inline style is being used for example purposes in order to keep this example simple and
-    -- avoid loading additional resources. Use a proper stylesheet when building your own app.
-    div []
-        [ h2  [] [ text ("title:" ++ model.cursorFile.title) ]
-        , div [] [ text ("path:" ++ model.cursorFile.path) ]
-        , div [] [ text ("contents:" ++ model.cursorFile.contents) ]
+    layout [] (row []
+        [ column [ Border.widthEach { bottom = 2, top = 2, left = 2, right = 2 }
+                 , Border.color grey, padding 30
+                 , height <| px 400 ]
+               [ text "[Directory]"
+               , naturalJsonToElement model.dirJson 0 ]
+        , column [ height fill
+                 , Border.widthEach { bottom = 2, top = 2, left = 2, right = 2 }
+                 , Border.color grey
+                 , padding 30 ]
+            [ text ("title:" ++ model.cursorFile.title)
+            , text ("path:" ++ model.cursorFile.path)
+            , text ("contents:" ++ model.cursorFile.contents)
+            ]
         ]
+     )
 
 
 
@@ -141,6 +207,7 @@ naturalJsonDecoder =
         , D.nullable D.value
             |> D.andThen (\_ -> D.succeed Null)
         ]
+
 
 -- MAIN
 
