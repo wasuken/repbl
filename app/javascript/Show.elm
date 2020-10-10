@@ -6,10 +6,11 @@ import List.Extra as LE
 import Http
 import Json.Decode as D exposing (Decoder, field, int, list, map3, string)
 import Element as E exposing (..)
+import Element.Events as Event
 import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
-
+import Regex
 
 -- MODEL
 
@@ -82,23 +83,48 @@ attrGetChildren json =
                Nothing -> []
        _ -> []
 
-naturalJsonToElement : NaturalJson -> Int -> (E.Element msg)
-naturalJsonToElement fs level =
+-- searchPathInDirJson : NaturalJson -> String -> MayBe FileInfo
+-- searchPathInDirJson json targetPath =
+--     let path = (attrGetAt 1 json "unknown")
+--         tp = attrGetAt 0 json "unknown"
+--         children = case tp of
+--                       "directory" ->
+--                             (attrGetChildren json)
+--                       _ -> Nothing
+--     in case (path == targetPath) of
+--           True -> Just json
+--           False ->
+--               let reg = Maybe.withDefault Regex.never <| Regex.fromString ("^" ++ path)
+--               in Nothing
+
+-- 下記よりおぱくり申した
+-- https://package.elm-lang.org/packages/elm/regex/latest/Regex#replace
+userReplace : String -> (Regex.Match -> String) -> String -> String
+userReplace userRegex replacer string =
+  case Regex.fromString userRegex of
+    Nothing ->
+      string
+
+    Just regex ->
+      Regex.replace regex replacer string
+
+naturalJsonToElement : NaturalJson -> Int -> String -> (E.Element msg)
+naturalJsonToElement fs level currentPath =
     let tp = attrGetAt 0 fs "unknown"
-        path = case tp of
-             "file" -> (attrGetAt 1 fs "unknown")
-             _ -> (attrGetAt 1 fs "unknown")
+        path = userReplace ("^" ++ currentPath) (\_ -> "" ) (attrGetAt 1 fs "unknown")
+        fullpath = currentPath ++ path
         children = case tp of
                       "directory" ->
-                            List.map (\child -> naturalJsonToElement child (level + 1)) (attrGetChildren fs)
+                            List.map (\child -> naturalJsonToElement child (level + 1) fullpath) (attrGetChildren fs)
                       _ -> []
         contents = case tp of
                      "file" ->
                          attrGetAt 2 fs ""
                      _ -> ""
     in column [] ([ textColumn [ paddingEach { top = 0, left = (10 * level), right = 0, bottom = 0 }  ]
-                               [ text path ]  ] ++ children)
+                               [ link [  ] { url = "#", label = text path } ]  ] ++ children)
 
+-- Event.onClick <| DisplayFile fullpath
 
 
 view : Model -> Html msg
@@ -106,10 +132,13 @@ view model =
     layout [] (row []
         [ column [ Border.widthEach { bottom = 2, top = 2, left = 2, right = 2 }
                  , Border.color grey, padding 30
-                 , height <| px 400 ]
+                 , height <| px 400
+                 , width <| px 300
+                 , scrollbarY ]
                [ text "[Directory]"
-               , naturalJsonToElement model.dirJson 0 ]
+               , naturalJsonToElement model.dirJson 0 "" ]
         , column [ height fill
+                 , width fill
                  , Border.widthEach { bottom = 2, top = 2, left = 2, right = 2 }
                  , Border.color grey
                  , padding 30 ]
@@ -129,6 +158,7 @@ type Message
     = ChangeFile FileInfo
     | GotDirectoryJson (Result Http.Error NaturalJson)
     | GotParam Param
+    | DisplayFile FileInfo
 
 type alias Param =
      { repoId : String
@@ -137,7 +167,6 @@ type alias Param =
 port param : (Param -> msg) -> Sub msg
 
 -- UPDATE
-
 
 update : Message -> Model -> ( Model, Cmd Message )
 update message model =
@@ -168,6 +197,9 @@ update message model =
                   , csrfToken = prm.csrfToken
                   , repoId = id}
              , Cmd.batch [ projectInfoListAsync id ] )
+
+       DisplayFile fileInfo ->
+           ( { model | cursorFile = fileInfo }, Cmd.none)
 
 
 -- SUBSCRIPTIONS
