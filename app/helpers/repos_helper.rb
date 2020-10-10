@@ -40,6 +40,7 @@ module ReposHelper
     def initialize(type, path)
       @type = type
       @path = path
+      @path = path + "/" if @path[-1] != "/"
       @children = []
     end
     def insert(zfs)
@@ -49,11 +50,15 @@ module ReposHelper
         @children.push(zfs)
       else
         # 同じものが存在しているばあい
-        if @path == zfs.path
+        self_path = @path
+        self_path = self_path[0..-2] if self_path[-1] == "/"
+        zfs_path = zfs.path
+        zfs_path = zfs_path[0..-2] if zfs_path[-1] == "/"
+        if self_path == zfs_path
           # puts "Already exist path(#{zfs.path})."
           return
         # 直下の場合
-        elsif File.join(zfs.path.split('/')[0..-2] + [""]) == @path
+        elsif File.join(zfs.path.split('/')[0..-2] + [""])[0..-2] == self_path
           @children.push(zfs)
         # 途中の道筋である場合
         elsif @children.select{|x| x.type == :directory}

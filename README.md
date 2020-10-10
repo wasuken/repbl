@@ -23,51 +23,20 @@ Things you may want to cover:
 
 * ...
 
-## 突発Memo
+# Memo
 
-後でけす。
+## Rails
 
-### 修正するかも?
+### Show
 
-* ParseしやすいJSON、もといRails側のzfsの構造を修正する。
+* zfsの重複がある("hoge"と"hoge/"みたいな重複)。
 
-* fileのcontentsを含めた現状のJSONから、含めずにpathもしくはpath_idをふくむJSONへと変更し、fileはpaths/files_controllerから
+## Elm
 
+### Show
 
-### とりあえず実装する機能Memo(Show.elm)
+#### DirectoryTree
 
-#### page読込時
+* 見た目うんこなので、CSSがんばる
 
-1. JSON取得
-
-2. JSONからdirtreeを生成。
-
-#### dirtree event 一覧
-
-##### file on click
-
-中央辺りにcontentsを出力。
-
-##### dir on click
-
-とくに考えてない
-
-#### model
-
-* dirJson : ?
-
-* fileInfo : FileInfo 選択されているfile。表示する用。
-
-	* FileInfo
-
-			* path
-
-			* title
-
-			* contents
-
-#### message
-
-* ChangeFile
-
-* ViewDirectory
+* fullpathになってるので、単体にする。
