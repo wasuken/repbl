@@ -5,10 +5,11 @@ require 'json'
 
 module ReposHelper
   class ZFileSystem
-    attr_accessor :path, :type
+    attr_accessor :path, :type, :id
     def initialize(type, path)
       @type = type
       @path = path
+      @id = -1                  # APIとして送信する際にのみ利用。最悪な設計じゃん...。
     end
     def self.build(type, path)
       if type == :file
@@ -22,15 +23,15 @@ module ReposHelper
   class ZFile < ZFileSystem
     attr_accessor :contents
     def initialize(type, path, contents="")
-      @type = type
-      @path = path
+      super(type, path)
       @contents = contents
     end
     def to_h
       h = {}
       h[:type] = @type
       h[:path] = @path
-      h[:contents] = @contents
+      h[:contents] = @contents unless @contents.size.zero?
+      h[:id] = @id if @id.positive?
       h
     end
   end
@@ -38,8 +39,7 @@ module ReposHelper
   class ZDir < ZFileSystem
     attr_accessor :children
     def initialize(type, path)
-      @type = type
-      @path = path
+      super(type, path)
       @path = path + "/" if @path[-1] != "/"
       @children = []
     end
@@ -95,6 +95,7 @@ module ReposHelper
       h[:type] = @type
       h[:path] = @path
       h[:children] = @children.map(&:to_h)
+      h[:id] = @id if @id.positive?
       h
     end
   end
@@ -148,7 +149,7 @@ module ReposHelper
     files = Rfile.joins(:path)
               .joins("inner join repo_paths on repo_paths.path_id = paths.id")
               .where(repo_paths: {repo_id: params[:id]})
-              .select("paths.name as name, rfiles.contents as contents")
+              .select("paths.name as name, rfiles.id as id")
               .all
               .sort{|a, b| a.name.split('/').select(&:empty?).size <=> b.name.split('/').select(&:empty?).size}
     root = ZFileSystem.build(:directory, dirs[0].name)
@@ -158,7 +159,7 @@ module ReposHelper
     end
     files.each do |f|
       zfs = ZFileSystem.build(:file, f.name)
-      zfs.contents = f.contents
+      zfs.id = f.id
       root.insert(zfs)
     end
     root

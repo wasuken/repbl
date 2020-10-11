@@ -5,6 +5,8 @@ Rails.application.routes.draw do
       get 'repos/:id', to: 'repos#show'
       post 'repos', to: 'repos#create'
       delete 'repos/:id', to: 'repos#destroy'
+
+      get 'rfiles/:repoId/:rfileId', to: 'rfiles#show'
     end
   end
   get '/', to: 'repos#index'
