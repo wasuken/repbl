@@ -27,10 +27,6 @@ Things you may want to cover:
 
 ## Rails
 
-### Show
-
-* zfsの重複がある("hoge"と"hoge/"みたいな重複)。
-
 ## Elm
 
 ### Show
@@ -38,5 +34,3 @@ Things you may want to cover:
 #### DirectoryTree
 
 * 見た目うんこなので、CSSがんばる
-
-* fullpathになってるので、単体にする。

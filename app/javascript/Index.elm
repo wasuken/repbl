@@ -8,6 +8,7 @@ import Http
 import Json.Decode as JD exposing (Decoder, field, int, list, map3, string)
 
 
+
 -- MODEL
 
 
@@ -53,20 +54,26 @@ view model =
             [ text "repbl - Repository Blog -" ]
         , div []
             [ text "input url"
-            , input [ type_ "url"
-                    , placeholder "url"
-                    , value model.inputInfo.url
-                    , onInput ChangeUrl ] []
-            , input [ type_ "text"
-                    , placeholder "title"
-                    , value model.inputInfo.title
-                    , onInput ChangeTitle ] []
+            , input
+                [ type_ "url"
+                , placeholder "url"
+                , value model.inputInfo.url
+                , onInput ChangeUrl
+                ]
+                []
+            , input
+                [ type_ "text"
+                , placeholder "title"
+                , value model.inputInfo.title
+                , onInput ChangeTitle
+                ]
+                []
             , button [ onClick PostInputInfo ] [ text "post" ]
             ]
         , h3 []
-            [ text "一覧"]
+            [ text "一覧" ]
         , ul []
-            (List.map (\p -> li [] [ a [ href ("/repos/" ++ (String.fromInt p.id)) ] [text ("title: " ++ p.title)] ]) model.projects)
+            (List.map (\p -> li [] [ a [ href ("/repos/" ++ String.fromInt p.id) ] [ text ("title: " ++ p.title) ] ]) model.projects)
         ]
 
 
@@ -82,7 +89,10 @@ type Message
     | ChangeTitle String
     | ChangeUrl String
 
+
 port csrfToken : (String -> msg) -> Sub msg
+
+
 
 -- UPDATE
 
@@ -101,37 +111,58 @@ update message model =
                     ( model, Cmd.none )
 
         PostInputInfo ->
-            (model, Cmd.batch [ postInputInfo model.inputInfo])
+            ( model, Cmd.batch [ postInputInfo model.inputInfo ] )
 
         PostedInputInfo result ->
             case result of
                 Ok text ->
-                    ( { model | inputInfo = { url = ""
-                                            , title = ""
-                                            , csrfToken = model.inputInfo.csrfToken}}
+                    ( { model
+                        | inputInfo =
+                            { url = ""
+                            , title = ""
+                            , csrfToken = model.inputInfo.csrfToken
+                            }
+                      }
                     , Cmd.batch [ projectInfoListAsync ]
                     )
 
                 Err _ ->
                     ( model, Cmd.none )
 
-        GotCsrfToken token -> ( { model | inputInfo = { url = model.inputInfo.url
-                                                     , title = model.inputInfo.title
-                                                     , csrfToken = token }}
-                                , Cmd.none
-                              )
+        GotCsrfToken token ->
+            ( { model
+                | inputInfo =
+                    { url = model.inputInfo.url
+                    , title = model.inputInfo.title
+                    , csrfToken = token
+                    }
+              }
+            , Cmd.none
+            )
 
-        ChangeTitle title -> ( { model | inputInfo = { url = model.inputInfo.url
-                                                     , title = title
-                                                     , csrfToken = model.inputInfo.csrfToken }}
-                                , Cmd.none
-                              )
+        ChangeTitle title ->
+            ( { model
+                | inputInfo =
+                    { url = model.inputInfo.url
+                    , title = title
+                    , csrfToken = model.inputInfo.csrfToken
+                    }
+              }
+            , Cmd.none
+            )
 
-        ChangeUrl url -> ( { model | inputInfo = { url = url
-                                                     , title = model.inputInfo.title
-                                                     , csrfToken = model.inputInfo.csrfToken }}
-                         , Cmd.none
-                         )
+        ChangeUrl url ->
+            ( { model
+                | inputInfo =
+                    { url = url
+                    , title = model.inputInfo.title
+                    , csrfToken = model.inputInfo.csrfToken
+                    }
+              }
+            , Cmd.none
+            )
+
+
 
 -- SUBSCRIPTIONS
 
@@ -152,6 +183,7 @@ projectInfoListAsync =
         , expect = Http.expectJson GotProject (JD.list projectInfoDecoder)
         }
 
+
 postInputInfo : InputInfo -> Cmd Message
 postInputInfo inputInfo =
     Http.request
@@ -171,6 +203,7 @@ projectInfoDecoder =
         (field "id" int)
         (field "url" string)
         (field "title" string)
+
 
 
 -- MAIN
