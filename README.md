@@ -29,7 +29,9 @@ Things you may want to cover:
 
 ### 認証
 
-別に管理画面とか高尚な？ことは期待しないので、tokensあたりのtableを作ってそこのtokenと一致するtokenをもつrequestのみ
+別に管理画面とか高尚な？ことは期待しないので、
+
+tokensあたりのtableを作ってそこのtokenと一致するtokenをもつrequestのみ
 
 受け取るみたいな処理にする。
 

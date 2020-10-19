@@ -7,9 +7,12 @@ import Element.Border as Border
 import Element.Events as Event
 import Element.Font as Font
 import Html as HTML exposing (Html)
+import Html.Attributes as Attr
+import Html.Events as HE
 import Http
 import Json.Decode as D exposing (Decoder, field, int, list, map3, string)
 import List.Extra as LE
+import Markdown
 import Regex
 
 
@@ -25,6 +28,11 @@ type NaturalJson
     | Null
     | Object (List ( String, NaturalJson ))
     | List (List NaturalJson)
+
+
+type ContentsStatus
+    = Markdown
+    | HTML
 
 
 type alias ContentsMap =
@@ -44,6 +52,7 @@ type alias Model =
     , dirJson : NaturalJson
     , csrfToken : String
     , repoId : Int
+    , contentsStatus : ContentsStatus
     }
 
 
@@ -53,7 +62,7 @@ type alias Model =
 
 init : ( Model, Cmd Message )
 init =
-    ( Model { path = "", title = "", contents = "", rfileId = -1 } Null "" -1, Cmd.none )
+    ( Model { path = "", title = "", contents = "", rfileId = -1 } Null "" -1 Markdown, Cmd.none )
 
 
 
@@ -179,41 +188,47 @@ naturalJsonToElement fs repoId level currentPath =
         )
 
 
-
--- Event.onClick <| DisplayFile fullpath
-
-
 view : Model -> Html Message
 view model =
-    layout []
-        (column []
-            [ row []
-                [ column
-                    [ Border.widthEach { bottom = 2, top = 2, left = 2, right = 2 }
-                    , Border.color grey
-                    , padding 30
-                    , height (fill |> minimum 500)
-                    , height <| px 500
-                    , width <| px 400
-                    , scrollbars
-                    ]
-                    [ el [ Font.size 23, Font.bold ] (text "[Directory]")
-                    , naturalJsonToElement model.dirJson model.repoId 0 ""
-                    ]
-                , column
-                    [ width (fill |> minimum 300)
-                    , width <| px 800
-                    , height <| px 500
-                    , Border.widthEach { bottom = 2, top = 2, left = 2, right = 2 }
-                    , Border.color grey
-                    , scrollbars
-                    , padding 30
-                    ]
-                    [ text model.cursorFile.contents ]
-                ]
-            , row [] [ link [] { url = "/", label = text "戻る" } ]
+    HTML.div []
+        [ HTML.div []
+            [ HTML.button [ HE.onClick (ChangeStatus Markdown) ] [ HTML.text "Markdown" ]
+            , HTML.button [ HE.onClick (ChangeStatus HTML) ] [ HTML.text "HTML" ]
             ]
-        )
+        , HTML.div [ Attr.style "float" "left" ]
+            [ layout []
+                (column []
+                    [ row []
+                        [ column
+                            [ Border.widthEach { bottom = 2, top = 2, left = 2, right = 2 }
+                            , Border.color grey
+                            , padding 30
+                            , height (fill |> minimum 500)
+                            , height <| px 500
+                            , width <| px 300
+                            , scrollbars
+                            ]
+                            [ el [ Font.size 23, Font.bold ] (text "[Directory]")
+                            , naturalJsonToElement model.dirJson model.repoId 0 ""
+                            ]
+                        ]
+                    ]
+                )
+            ]
+        , HTML.div
+            [ Attr.style "float" "left"
+            , Attr.style "overflow" "scroll"
+            , Attr.style "width" "70%"
+            , Attr.style "height" "500px"
+            ]
+          <|
+            if model.contentsStatus == Markdown then
+                [ layout [] (text model.cursorFile.contents) ]
+
+            else
+                Markdown.toHtml Nothing model.cursorFile.contents
+        , layout [] (row [] [ link [] { url = "/", label = text "戻る" } ])
+        ]
 
 
 
@@ -226,6 +241,7 @@ type Message
     | GotParam Param
     | GotFileContentsJson (Result Http.Error ContentsMap)
     | FileClick String Int
+    | ChangeStatus ContentsStatus
 
 
 type alias Param =
@@ -310,6 +326,9 @@ update message model =
               }
             , Cmd.batch [ fileContentsAsync repoId (String.fromInt rfileId) ]
             )
+
+        ChangeStatus status ->
+            ( { model | contentsStatus = status }, Cmd.none )
 
 
 subscriptions : Model -> Sub Message
