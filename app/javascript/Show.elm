@@ -1,11 +1,6 @@
 port module Show exposing (..)
 
 import Browser
-import Element as E exposing (..)
-import Element.Background as Background
-import Element.Border as Border
-import Element.Events as Event
-import Element.Font as Font
 import Html as HTML exposing (Html)
 import Html.Attributes as Attr
 import Html.Events as HE
@@ -67,12 +62,6 @@ init =
 
 
 -- VIEW
-
-
-grey : Color
-grey =
-    rgb255 0xC0 0xC0 0xC0
-
 
 
 -- typeとpathしか取得できない。
@@ -141,8 +130,8 @@ userReplace userRegex replacer string =
             Regex.replace regex replacer string
 
 
-naturalJsonToElement : NaturalJson -> Int -> Int -> String -> E.Element Message
-naturalJsonToElement fs repoId level currentPath =
+naturalJsonToHTML : NaturalJson -> Int -> Int -> String -> Html Message
+naturalJsonToHTML fs repoId level currentPath =
     let
         tp =
             attrGetAt 0 fs "unknown"
@@ -156,7 +145,7 @@ naturalJsonToElement fs repoId level currentPath =
         children =
             case tp of
                 "directory" ->
-                    List.map (\child -> naturalJsonToElement child repoId (level + 1) fullpath) (attrGetChildren fs)
+                    List.map (\child -> naturalJsonToHTML child repoId (level + 1) fullpath) (attrGetChildren fs)
 
                 _ ->
                     []
@@ -174,61 +163,46 @@ naturalJsonToElement fs repoId level currentPath =
                 _ ->
                     -2
     in
-    column []
-        ([ textColumn
-            [ paddingEach { top = 0, left = 10 * level, right = 0, bottom = 0 } ]
-            [ textColumn
-                [ Event.onClick (FileClick (String.fromInt repoId) id)
-                , pointer
-                ]
-                [ text path ]
-            ]
-         ]
-            ++ children
-        )
+    HTML.li [ ]
+            ([ HTML.a [ HE.onClick (FileClick (String.fromInt repoId) id) ]
+                      [ HTML.text path ]
+             ] ++ children)
 
+
+            -- [ paddingEach { top = 0, left = 10 * level, right = 0, bottom = 0 } ]
+            -- [ textColumn
+            --     [ Event.onClick
+            --     , pointer
+            --     ]
+            --     [ E.html () ]
+            -- ]
 
 view : Model -> Html Message
 view model =
-    HTML.div []
-        [ HTML.div []
+    HTML.div [ ]
+        [ HTML.div [ ]
             [ HTML.button [ HE.onClick (ChangeStatus Markdown) ] [ HTML.text "Markdown" ]
             , HTML.button [ HE.onClick (ChangeStatus HTML) ] [ HTML.text "HTML" ]
+            , HTML.a [ Attr.attribute "href" "/" ] [ HTML.text "戻る" ]
             ]
-        , HTML.div [ Attr.style "float" "left" ]
-            [ layout []
-                (column []
-                    [ row []
-                        [ column
-                            [ Border.widthEach { bottom = 2, top = 2, left = 2, right = 2 }
-                            , Border.color grey
-                            , padding 30
-                            , height (fill |> minimum 500)
-                            , height <| px 500
-                            , width <| px 300
-                            , scrollbars
-                            ]
-                            [ el [ Font.size 23, Font.bold ] (text "[Directory]")
-                            , naturalJsonToElement model.dirJson model.repoId 0 ""
-                            ]
-                        ]
-                    ]
-                )
+        , HTML.div [ Attr.attribute "class" "tree" ]
+            [ HTML.text "[Directory]"
+            , HTML.ul [ Attr.attribute "class" "" ]
+                     [naturalJsonToHTML model.dirJson model.repoId 0 ""]
             ]
         , HTML.div
             [ Attr.style "float" "left"
             , Attr.style "overflow" "scroll"
-            , Attr.style "width" "70%"
+            , Attr.style "width" "50%"
             , Attr.style "height" "500px"
             ]
           <|
             if model.contentsStatus == Markdown then
-                [ layout [] (text model.cursorFile.contents) ]
-
+                List.map (\x -> HTML.p [] [ HTML.text x ])
+                         (String.split "\n" model.cursorFile.contents)
             else
                 Markdown.toHtml Nothing model.cursorFile.contents
-        , layout [] (row [] [ link [] { url = "/", label = text "戻る" } ])
-        ]
+         ]
 
 
 
@@ -342,7 +316,7 @@ subscriptions model =
 
 projectInfoListAsync : Int -> Cmd Message
 projectInfoListAsync repoId =
-    Http.get
+     Http.get
         { url = "/api/v1/repos/" ++ String.fromInt repoId
         , expect = Http.expectJson GotDirectoryJson naturalJsonDecoder
         }
