@@ -62,8 +62,6 @@ init =
 
 
 -- VIEW
-
-
 -- typeとpathしか取得できない。
 
 
@@ -163,24 +161,18 @@ naturalJsonToHTML fs repoId level currentPath =
                 _ ->
                     -2
     in
-    HTML.li [ ]
-            ([ HTML.a [ HE.onClick (FileClick (String.fromInt repoId) id) ]
-                      [ HTML.text path ]
-             ] ++ children)
+    HTML.li []
+        ([ HTML.a [ HE.onClick (FileClick (String.fromInt repoId) id) ]
+            [ HTML.text path ]
+         ]
+            ++ children
+        )
 
-
-            -- [ paddingEach { top = 0, left = 10 * level, right = 0, bottom = 0 } ]
-            -- [ textColumn
-            --     [ Event.onClick
-            --     , pointer
-            --     ]
-            --     [ E.html () ]
-            -- ]
 
 view : Model -> Html Message
 view model =
-    HTML.div [ ]
-        [ HTML.div [ ]
+    HTML.div []
+        [ HTML.div []
             [ HTML.button [ HE.onClick (ChangeStatus Markdown) ] [ HTML.text "Markdown" ]
             , HTML.button [ HE.onClick (ChangeStatus HTML) ] [ HTML.text "HTML" ]
             , HTML.a [ Attr.attribute "href" "/" ] [ HTML.text "戻る" ]
@@ -188,7 +180,7 @@ view model =
         , HTML.div [ Attr.attribute "class" "tree" ]
             [ HTML.text "[Directory]"
             , HTML.ul [ Attr.attribute "class" "" ]
-                     [naturalJsonToHTML model.dirJson model.repoId 0 ""]
+                [ naturalJsonToHTML model.dirJson model.repoId 0 "" ]
             ]
         , HTML.div
             [ Attr.style "float" "left"
@@ -199,10 +191,11 @@ view model =
           <|
             if model.contentsStatus == Markdown then
                 List.map (\x -> HTML.p [] [ HTML.text x ])
-                         (String.split "\n" model.cursorFile.contents)
+                    (String.split "\n" model.cursorFile.contents)
+
             else
                 Markdown.toHtml Nothing model.cursorFile.contents
-         ]
+        ]
 
 
 
@@ -316,7 +309,7 @@ subscriptions model =
 
 projectInfoListAsync : Int -> Cmd Message
 projectInfoListAsync repoId =
-     Http.get
+    Http.get
         { url = "/api/v1/repos/" ++ String.fromInt repoId
         , expect = Http.expectJson GotDirectoryJson naturalJsonDecoder
         }
