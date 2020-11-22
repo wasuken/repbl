@@ -3,9 +3,21 @@ require 'test_helper'
 require 'json'
 
 class Api::V1::ReposControllerTest < ActionDispatch::IntegrationTest
+  include ReposHelper
+  def repo_insert(url, title)
+    repo = Repo.create(url: url, title: title)
+    zfs_insert(remote_zip_to_zfs(url, ".*.md$"), repo.id)
+  end
   test "should_get_index" do
     get("/api/v1/repos")
     assert_response :success
+  end
+  test "should_delete_repo" do
+    tk = Token.gen_token.token
+    id = Repo.create(url: "hoge", title: "hoge").id
+    delete("/api/v1/repos/#{id}", params: {token: tk})
+    assert_response :success
+    assert Repo.where(id: id).size.zero?
   end
   test "should_post_repo" do
     tk = Token.gen_token.token
@@ -29,13 +41,6 @@ class Api::V1::ReposControllerTest < ActionDispatch::IntegrationTest
     assert before_size == Path.all.size
     assert repo.nil?
   end
-  test "should_delete_repo" do
-    tk = Token.gen_token.token
-    id = Repo.create(url: "hoge", title: "hoge").id
-    delete("/api/v1/repos/#{id}", params: {token: tk})
-    assert_response :success
-    assert Repo.where(id: id).size.zero?
-  end
   test "should_delete_repo_fail" do
     id = Repo.create(url: "hoge", title: "hoge").id
     delete("/api/v1/repos/#{id}")
@@ -43,11 +48,7 @@ class Api::V1::ReposControllerTest < ActionDispatch::IntegrationTest
     assert !Repo.where(id: id).size.zero?
   end
   test "should_get_show" do
-    tk = Token.gen_token.token
-    post("/api/v1/repos",
-         params: {url: "https://github.com/wasuken/nation-memo/archive/master.zip",
-                  title: '日報',
-                  token: tk})
+    repo_insert('https://github.com/wasuken/nippo/archive/master.zip', '日報')
     repo = Repo.all.first
     get("/api/v1/repos/#{repo.id}")
     assert_response :success

@@ -52,28 +52,10 @@ view model =
     div []
         [ h1 [ style "display" "flex", style "justify-content" "center" ]
             [ text "repbl - Repository Blog -" ]
-        , div []
-            [ text "input url"
-            , input
-                [ type_ "url"
-                , placeholder "url"
-                , value model.inputInfo.url
-                , onInput ChangeUrl
-                ]
-                []
-            , input
-                [ type_ "text"
-                , placeholder "title"
-                , value model.inputInfo.title
-                , onInput ChangeTitle
-                ]
-                []
-            , button [ onClick PostInputInfo ] [ text "post" ]
-            ]
         , h3 []
             [ text "一覧" ]
         , ul []
-            (List.map (\p -> li [] [ a [ href ("/repos/" ++ String.fromInt p.id) ] [ text ("title: " ++ p.title) ] ]) model.projects)
+            (List.map (\p -> li [] [ a [ href ("/repos/" ++ String.fromInt p.id) ] [ text p.title ] ]) model.projects)
         ]
 
 
