@@ -10,6 +10,8 @@ import List.Extra as LE
 import Markdown
 import Regex
 
+
+
 -- MODEL
 -- 以下をArrange(劣化).
 -- https://qiita.com/Goryudyuma/items/e4c558bd309bc9c4de52
@@ -44,7 +46,7 @@ type alias FileInfo =
 type alias Model =
     { cursorFile : FileInfo
     , dirJson : NaturalJson
-    , openedList: List String
+    , openedList : List String
     , csrfToken : String
     , repoId : Int
     , contentsStatus : ContentsStatus
@@ -140,16 +142,26 @@ naturalJsonToHTML fs repoId level currentPath model =
         fullpath =
             currentPath ++ path
 
-        children =
-            case (List.member path model.openedList) of
-                True ->
-                   case tp of
-                       "directory" ->
-                           List.map (\child -> naturalJsonToHTML child repoId (level + 1) fullpath model) (attrGetChildren fs)
+        class =
+            case tp of
+                "directory" ->
+                    "fa fa-folder-open yellow"
 
-                       _ ->
-                           []
-                False -> []
+                _ ->
+                    "fab fa-markdown blue"
+
+        children =
+            case List.member path model.openedList of
+                True ->
+                    case tp of
+                        "directory" ->
+                            List.map (\child -> naturalJsonToHTML child repoId (level + 1) fullpath model) (attrGetChildren fs)
+
+                        _ ->
+                            []
+
+                False ->
+                    []
 
         id =
             case tp of
@@ -164,11 +176,18 @@ naturalJsonToHTML fs repoId level currentPath model =
                 _ ->
                     -2
 
-        clickEvent = if tp == "directory" then (DirOC path)
-                                          else (FileClick (String.fromInt repoId) id)
+        clickEvent =
+            if tp == "directory" then
+                DirOC path
+
+            else
+                FileClick (String.fromInt repoId) id
     in
     HTML.li []
-        ([ HTML.a [ HE.onClick clickEvent ]
+        ([ HTML.a
+            [ HE.onClick clickEvent
+            , Attr.attribute "class" class
+            ]
             [ HTML.text path ]
          ]
             ++ children
@@ -177,22 +196,28 @@ naturalJsonToHTML fs repoId level currentPath model =
 
 view : Model -> Html Message
 view model =
-    HTML.div [ ]
+    HTML.div
+        [ Attr.style "height" "100%"
+        , Attr.style "width" "100%"
+        , Attr.style "max-height" "100%"
+        ]
         [ HTML.div []
             [ HTML.button [ HE.onClick (ChangeStatus Markdown) ] [ HTML.text "Markdown" ]
             , HTML.button [ HE.onClick (ChangeStatus HTML) ] [ HTML.text "HTML" ]
             , HTML.a [ Attr.attribute "href" "/" ] [ HTML.text "戻る" ]
             ]
-        , HTML.div [ Attr.attribute "class" "tree", Attr.style "height" "100% !important" ]
+        , HTML.div [ Attr.attribute "class" "tree" ]
             [ HTML.text "[Directory]"
-            , HTML.ul [ Attr.attribute "class" "" ]
+            , HTML.ul []
                 [ naturalJsonToHTML model.dirJson model.repoId 0 "" model ]
             ]
         , HTML.div
             [ Attr.style "float" "left"
-            , Attr.style "overflow" "scroll"
-            , Attr.style "width" "50%"
-            , Attr.style "height" "500px"
+            , Attr.style "margin-left" "30px"
+            , Attr.style "overflow" "auto"
+            , Attr.style "width" "60%"
+            , Attr.style "height" "100%"
+            , Attr.attribute "class" "markdown-body"
             ]
           <|
             if model.contentsStatus == Markdown then
@@ -306,8 +331,12 @@ update message model =
 
         DirOC path ->
             let
-                rst = if (List.member path model.openedList) then List.filter (\p -> p /= path) model.openedList
-                                                             else model.openedList ++ [path]
+                rst =
+                    if List.member path model.openedList then
+                        List.filter (\p -> p /= path) model.openedList
+
+                    else
+                        model.openedList ++ [ path ]
             in
             ( { model | openedList = rst }, Cmd.none )
 
@@ -371,6 +400,8 @@ naturalJsonDecoder =
         , D.nullable D.value
             |> D.andThen (\_ -> D.succeed Null)
         ]
+
+
 
 -- MAIN
 
