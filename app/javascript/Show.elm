@@ -10,8 +10,6 @@ import List.Extra as LE
 import Markdown
 import Regex
 
-
-
 -- MODEL
 -- 以下をArrange(劣化).
 -- https://qiita.com/Goryudyuma/items/e4c558bd309bc9c4de52
@@ -22,6 +20,7 @@ type NaturalJson
     | Int Int
     | Null
     | Object (List ( String, NaturalJson ))
+    | Bool Bool
     | List (List NaturalJson)
 
 
@@ -45,6 +44,7 @@ type alias FileInfo =
 type alias Model =
     { cursorFile : FileInfo
     , dirJson : NaturalJson
+    , openedList: List String
     , csrfToken : String
     , repoId : Int
     , contentsStatus : ContentsStatus
@@ -57,7 +57,7 @@ type alias Model =
 
 init : ( Model, Cmd Message )
 init =
-    ( Model { path = "", title = "", contents = "", rfileId = -1 } Null "" -1 Markdown, Cmd.none )
+    ( Model { path = "", title = "", contents = "", rfileId = -1 } Null [] "" -1 Markdown, Cmd.none )
 
 
 
@@ -128,8 +128,8 @@ userReplace userRegex replacer string =
             Regex.replace regex replacer string
 
 
-naturalJsonToHTML : NaturalJson -> Int -> Int -> String -> Html Message
-naturalJsonToHTML fs repoId level currentPath =
+naturalJsonToHTML : NaturalJson -> Int -> Int -> String -> Model -> Html Message
+naturalJsonToHTML fs repoId level currentPath model =
     let
         tp =
             attrGetAt 0 fs "unknown"
@@ -141,12 +141,15 @@ naturalJsonToHTML fs repoId level currentPath =
             currentPath ++ path
 
         children =
-            case tp of
-                "directory" ->
-                    List.map (\child -> naturalJsonToHTML child repoId (level + 1) fullpath) (attrGetChildren fs)
+            case (List.member path model.openedList) of
+                True ->
+                   case tp of
+                       "directory" ->
+                           List.map (\child -> naturalJsonToHTML child repoId (level + 1) fullpath model) (attrGetChildren fs)
 
-                _ ->
-                    []
+                       _ ->
+                           []
+                False -> []
 
         id =
             case tp of
@@ -160,9 +163,12 @@ naturalJsonToHTML fs repoId level currentPath =
 
                 _ ->
                     -2
+
+        clickEvent = if tp == "directory" then (DirOC path)
+                                          else (FileClick (String.fromInt repoId) id)
     in
     HTML.li []
-        ([ HTML.a [ HE.onClick (FileClick (String.fromInt repoId) id) ]
+        ([ HTML.a [ HE.onClick clickEvent ]
             [ HTML.text path ]
          ]
             ++ children
@@ -171,16 +177,16 @@ naturalJsonToHTML fs repoId level currentPath =
 
 view : Model -> Html Message
 view model =
-    HTML.div []
+    HTML.div [ ]
         [ HTML.div []
             [ HTML.button [ HE.onClick (ChangeStatus Markdown) ] [ HTML.text "Markdown" ]
             , HTML.button [ HE.onClick (ChangeStatus HTML) ] [ HTML.text "HTML" ]
             , HTML.a [ Attr.attribute "href" "/" ] [ HTML.text "戻る" ]
             ]
-        , HTML.div [ Attr.attribute "class" "tree" ]
+        , HTML.div [ Attr.attribute "class" "tree", Attr.style "height" "100% !important" ]
             [ HTML.text "[Directory]"
             , HTML.ul [ Attr.attribute "class" "" ]
-                [ naturalJsonToHTML model.dirJson model.repoId 0 "" ]
+                [ naturalJsonToHTML model.dirJson model.repoId 0 "" model ]
             ]
         , HTML.div
             [ Attr.style "float" "left"
@@ -209,6 +215,7 @@ type Message
     | GotFileContentsJson (Result Http.Error ContentsMap)
     | FileClick String Int
     | ChangeStatus ContentsStatus
+    | DirOC String
 
 
 type alias Param =
@@ -297,6 +304,13 @@ update message model =
         ChangeStatus status ->
             ( { model | contentsStatus = status }, Cmd.none )
 
+        DirOC path ->
+            let
+                rst = if (List.member path model.openedList) then List.filter (\p -> p /= path) model.openedList
+                                                             else model.openedList ++ [path]
+            in
+            ( { model | openedList = rst }, Cmd.none )
+
 
 subscriptions : Model -> Sub Message
 subscriptions model =
@@ -342,6 +356,8 @@ naturalJsonDecoder =
             |> D.andThen (\str -> D.succeed (String str))
         , D.int
             |> D.andThen (\str -> D.succeed (Int str))
+        , D.bool
+            |> D.andThen (\str -> D.succeed (Bool str))
         , D.lazy
             (\_ ->
                 D.list naturalJsonDecoder
@@ -355,8 +371,6 @@ naturalJsonDecoder =
         , D.nullable D.value
             |> D.andThen (\_ -> D.succeed Null)
         ]
-
-
 
 -- MAIN
 
