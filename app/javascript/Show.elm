@@ -187,6 +187,7 @@ naturalJsonToHTML fs repoId level currentPath model =
         ([ HTML.a
             [ HE.onClick clickEvent
             , Attr.attribute "class" class
+            , Attr.attribute "data-turbolinks" "false"
             ]
             [ HTML.text path ]
          ]
@@ -204,7 +205,7 @@ view model =
         [ HTML.div []
             [ HTML.button [ HE.onClick (ChangeStatus Markdown) ] [ HTML.text "Markdown" ]
             , HTML.button [ HE.onClick (ChangeStatus HTML) ] [ HTML.text "HTML" ]
-            , HTML.a [ Attr.attribute "href" "/" ] [ HTML.text "戻る" ]
+            , HTML.a [ Attr.attribute "href" "/", Attr.attribute "data-turbolinks" "false" ] [ HTML.text "戻る" ]
             ]
         , HTML.div [ Attr.attribute "class" "tree" ]
             [ HTML.text "[Directory]"
