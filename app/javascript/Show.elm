@@ -415,7 +415,8 @@ update message model =
             )
 
         ClearFilterFiles ->
-            ( { model | filteredList = [] }, Cmd.none )
+            ( { model | filteredList = []
+                      , searchQuery = "" }, Cmd.none )
 
 
 subscriptions : Model -> Sub Message
