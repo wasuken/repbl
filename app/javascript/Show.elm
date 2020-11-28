@@ -46,7 +46,9 @@ type alias FileInfo =
 type alias Model =
     { cursorFile : FileInfo
     , dirJson : NaturalJson
+    , filteredList : List String
     , openedList : List String
+    , searchQuery : String
     , csrfToken : String
     , repoId : Int
     , contentsStatus : ContentsStatus
@@ -59,7 +61,7 @@ type alias Model =
 
 init : ( Model, Cmd Message )
 init =
-    ( Model { path = "", title = "", contents = "", rfileId = -1 } Null [] "" -1 Markdown, Cmd.none )
+    ( Model { path = "", title = "", contents = "", rfileId = -1 } Null [] [] "" "" -1 Markdown, Cmd.none )
 
 
 
@@ -130,17 +132,45 @@ userReplace userRegex replacer string =
             Regex.replace regex replacer string
 
 
+filterFiles : NaturalJson -> String -> String -> List String
+filterFiles json ptn currentPath =
+    let
+        tp =
+            attrGetAt 0 json "unknown"
+
+        fullpath =
+            attrGetAt 1 json "unknown"
+
+        children =
+            case tp of
+                "directory" ->
+                    List.foldl (++) [] (List.map (\c -> filterFiles c ptn fullpath) (attrGetChildren json))
+
+                _ ->
+                    []
+    in
+    if tp == "file" then
+        if String.contains ptn fullpath then
+            []
+
+        else
+            [ fullpath ]
+
+    else
+        children
+
+
 naturalJsonToHTML : NaturalJson -> Int -> Int -> String -> Model -> Html Message
 naturalJsonToHTML fs repoId level currentPath model =
     let
         tp =
             attrGetAt 0 fs "unknown"
 
-        path =
-            userReplace ("^" ++ currentPath) (\_ -> "") (attrGetAt 1 fs "unknown")
-
         fullpath =
-            currentPath ++ path
+            attrGetAt 1 fs "unknown"
+
+        path =
+            userReplace ("^" ++ currentPath) (\_ -> "") fullpath
 
         class =
             case tp of
@@ -151,7 +181,7 @@ naturalJsonToHTML fs repoId level currentPath model =
                     "fab fa-markdown blue"
 
         children =
-            case List.member path model.openedList of
+            case List.member fullpath model.openedList of
                 True ->
                     case tp of
                         "directory" ->
@@ -178,12 +208,20 @@ naturalJsonToHTML fs repoId level currentPath model =
 
         clickEvent =
             if tp == "directory" then
-                DirOC path
+                DirOC fullpath
 
             else
                 FileClick (String.fromInt repoId) id
     in
-    HTML.li []
+    HTML.li
+        [ Attr.style "display"
+            (if List.member fullpath model.filteredList then
+                "none"
+
+             else
+                ""
+            )
+        ]
         ([ HTML.a
             [ HE.onClick clickEvent
             , Attr.attribute "class" class
@@ -208,7 +246,20 @@ view model =
             , HTML.a [ Attr.attribute "href" "/", Attr.attribute "data-turbolinks" "false" ] [ HTML.text "戻る" ]
             ]
         , HTML.div [ Attr.attribute "class" "tree" ]
-            [ HTML.text "[Directory]"
+            [ HTML.div []
+                [ HTML.text "[Directory]"
+                , HTML.div [] [ HTML.button [ HE.onClick AllCloseFolder ] [ HTML.text "すべてのフォルダを閉じる" ] ]
+                , HTML.div []
+                    [ HTML.button [ HE.onClick ClearFilterFiles ] [ HTML.text "検索をリセット" ]
+                    , HTML.input
+                        [ Attr.type_ "text"
+                        , Attr.placeholder "query"
+                        , Attr.value model.searchQuery
+                        , HE.onInput FilterFiles
+                        ]
+                        []
+                    ]
+                ]
             , HTML.ul []
                 [ naturalJsonToHTML model.dirJson model.repoId 0 "" model ]
             ]
@@ -242,6 +293,9 @@ type Message
     | FileClick String Int
     | ChangeStatus ContentsStatus
     | DirOC String
+    | AllCloseFolder
+    | FilterFiles String
+    | ClearFilterFiles
 
 
 type alias Param =
@@ -340,6 +394,28 @@ update message model =
                         model.openedList ++ [ path ]
             in
             ( { model | openedList = rst }, Cmd.none )
+
+        AllCloseFolder ->
+            ( { model | openedList = [] }, Cmd.none )
+
+        FilterFiles ptn ->
+            let
+                lst =
+                    if String.length ptn >= 3 then
+                        filterFiles model.dirJson ptn ""
+
+                    else
+                        []
+            in
+            ( { model
+                | filteredList = lst
+                , searchQuery = ptn
+              }
+            , Cmd.none
+            )
+
+        ClearFilterFiles ->
+            ( { model | filteredList = [] }, Cmd.none )
 
 
 subscriptions : Model -> Sub Message
