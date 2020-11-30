@@ -249,31 +249,34 @@ view model =
         , HTML.div [ Attr.attribute "class" "tree" ]
             [ HTML.div []
                 [ HTML.h2 [] [ HTML.text "[Directory]" ]
-                , HTML.div [ Attr.style "border" "2px solid black"
-                           , Attr.style "padding" "5px"]
-                      [ HTML.h4 [] [ HTML.text "Grep検索" ]
-                , HTML.div []
-                    [ HTML.input
-                        [ Attr.type_ "text"
-                        , Attr.placeholder "query"
-                        , Attr.value model.searchQuery
-                        , HE.onInput ChangeSearchQuery
-                        ]
-                        []
-                    , HTML.button [ HE.onClick (SearchClick model.repoId) ] [ HTML.text "Search" ]
-                    , HTML.button [ HE.onClick (RequestDirectoryJson model.repoId) ] [ HTML.text "リセット" ]
+                , HTML.div
+                    [ Attr.style "border" "2px solid black"
+                    , Attr.style "padding" "5px"
                     ]
-                , HTML.div []
-                    [ HTML.h4 [] [ HTML.text "File名検索" ]
-                    , HTML.input
-                        [ Attr.type_ "text"
-                        , Attr.placeholder "query"
-                        , Attr.value model.fileNameSearchQuery
-                        , HE.onInput FilterFiles
+                    [ HTML.h4 [] [ HTML.text "Grep検索" ]
+                    , HTML.div []
+                        [ HTML.input
+                            [ Attr.type_ "text"
+                            , Attr.placeholder "query"
+                            , Attr.value model.searchQuery
+                            , HE.onInput ChangeSearchQuery
+                            ]
+                            []
+                        , HTML.button [ HE.onClick (SearchClick model.repoId) ] [ HTML.text "Search" ]
+                        , HTML.button [ HE.onClick (RequestDirectoryJson model.repoId) ] [ HTML.text "リセット" ]
                         ]
-                        []
-                    , HTML.button [ HE.onClick ClearFilterFiles ] [ HTML.text "リセット" ]
-                    ]]
+                    , HTML.div []
+                        [ HTML.h4 [] [ HTML.text "File名検索" ]
+                        , HTML.input
+                            [ Attr.type_ "text"
+                            , Attr.placeholder "query"
+                            , Attr.value model.fileNameSearchQuery
+                            , HE.onInput FilterFiles
+                            ]
+                            []
+                        , HTML.button [ HE.onClick ClearFilterFiles ] [ HTML.text "リセット" ]
+                        ]
+                    ]
                 ]
             , HTML.div [] [ HTML.button [ HE.onClick AllCloseFolder ] [ HTML.text "すべてのフォルダを閉じる" ] ]
             , HTML.ul []
