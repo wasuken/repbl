@@ -247,19 +247,24 @@ view model =
             , HTML.a [ Attr.attribute "href" "/", Attr.attribute "data-turbolinks" "false" ] [ HTML.text "戻る" ]
             ]
         , HTML.div [ Attr.attribute "class" "tree" ]
-            [ HTML.div [] [ HTML.input [ Attr.type_ "text"
-                                       , Attr.placeholder "query"
-                                       , Attr.value model.searchQuery
-                                       , HE.onInput ChangeSearchQuery
-                                       ]
-                                       []
-                          , HTML.button [ HE.onClick (SearchClick model.repoId) ] [ HTML.text "Search" ]
-            ]
-            , HTML.div []
-                [ HTML.text "[Directory]"
-                , HTML.div [] [ HTML.button [ HE.onClick AllCloseFolder ] [ HTML.text "すべてのフォルダを閉じる" ] ]
+            [ HTML.div []
+                [ HTML.h2 [] [ HTML.text "[Directory]" ]
+                , HTML.div [ Attr.style "border" "2px solid black"
+                           , Attr.style "padding" "5px"]
+                      [ HTML.h4 [] [ HTML.text "Grep検索" ]
                 , HTML.div []
-                    [ HTML.button [ HE.onClick ClearFilterFiles ] [ HTML.text "検索をリセット" ]
+                    [ HTML.input
+                        [ Attr.type_ "text"
+                        , Attr.placeholder "query"
+                        , Attr.value model.searchQuery
+                        , HE.onInput ChangeSearchQuery
+                        ]
+                        []
+                    , HTML.button [ HE.onClick (SearchClick model.repoId) ] [ HTML.text "Search" ]
+                    , HTML.button [ HE.onClick (RequestDirectoryJson model.repoId) ] [ HTML.text "リセット" ]
+                    ]
+                , HTML.div []
+                    [ HTML.h4 [] [ HTML.text "File名検索" ]
                     , HTML.input
                         [ Attr.type_ "text"
                         , Attr.placeholder "query"
@@ -267,8 +272,10 @@ view model =
                         , HE.onInput FilterFiles
                         ]
                         []
-                    ]
+                    , HTML.button [ HE.onClick ClearFilterFiles ] [ HTML.text "リセット" ]
+                    ]]
                 ]
+            , HTML.div [] [ HTML.button [ HE.onClick AllCloseFolder ] [ HTML.text "すべてのフォルダを閉じる" ] ]
             , HTML.ul []
                 [ naturalJsonToHTML model.dirJson model.repoId 0 "" model ]
             ]
@@ -308,6 +315,7 @@ type Message
     | GotSearchJson (Result Http.Error NaturalJson)
     | SearchClick Int
     | ChangeSearchQuery String
+    | RequestDirectoryJson Int
 
 
 type alias Param =
@@ -427,8 +435,12 @@ update message model =
             )
 
         ClearFilterFiles ->
-            ( { model | filteredList = []
-                      , fileNameSearchQuery = "" }, Cmd.none )
+            ( { model
+                | filteredList = []
+                , fileNameSearchQuery = ""
+              }
+            , Cmd.none
+            )
 
         GotSearchJson result ->
             case result of
@@ -443,10 +455,14 @@ update message model =
                     ( model, Cmd.none )
 
         SearchClick repoId ->
-             ( model, Cmd.batch [ searchFilesAsync model.searchQuery repoId ])
+            ( model, Cmd.batch [ searchFilesAsync model.searchQuery repoId ] )
 
         ChangeSearchQuery text ->
-             ( { model | searchQuery = text }, Cmd.none )
+            ( { model | searchQuery = text }, Cmd.none )
+
+        RequestDirectoryJson repoId ->
+            ( model, Cmd.batch [ projectInfoListAsync repoId ] )
+
 
 subscriptions : Model -> Sub Message
 subscriptions model =
@@ -464,10 +480,11 @@ projectInfoListAsync repoId =
         , expect = Http.expectJson GotDirectoryJson naturalJsonDecoder
         }
 
+
 searchFilesAsync : String -> Int -> Cmd Message
 searchFilesAsync query repoId =
     Http.get
-        { url = "/api/v1/rfiles?query=" ++ query ++ "&repo_id=" ++ (String.fromInt repoId)
+        { url = "/api/v1/rfiles?query=" ++ query ++ "&repo_id=" ++ String.fromInt repoId
         , expect = Http.expectJson GotSearchJson naturalJsonDecoder
         }
 
@@ -485,6 +502,8 @@ fileContentsDecoder =
     D.map2 ContentsMap
         (field "id" int)
         (field "contents" string)
+
+
 
 -- 下記の劣化
 -- https://qiita.com/Goryudyuma/items/e4c558bd309bc9c4de52#%E3%81%9D%E3%82%8C%E3%81%AB%E5%90%88%E3%82%8F%E3%81%9B%E3%81
