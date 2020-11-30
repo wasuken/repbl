@@ -6,6 +6,6 @@ class CreateRfiles < ActiveRecord::Migration[6.0]
 
       t.timestamps
     end
-    add_foreign_key :rfiles, :paths, on_delete: :cascade
+    add_foreign_key :rfiles, :paths, on_delete: :cascade, name: "fk_rfiles_paths"
   end
 end
