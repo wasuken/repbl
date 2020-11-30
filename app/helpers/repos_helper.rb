@@ -139,19 +139,7 @@ module ReposHelper
       end
     end
   end
-  def repos_to_zfs(repo_id)
-    dirs = Rdir.joins(:path)
-             .joins("inner join repo_paths on repo_paths.path_id = paths.id")
-             .where(repo_paths: {repo_id: params[:id]})
-             .select("paths.name as name")
-             .all
-             .sort{|a, b| a.name.split('/').select(&:empty?).size <=> b.name.split('/').select(&:empty?).size}
-    files = Rfile.joins(:path)
-              .joins("inner join repo_paths on repo_paths.path_id = paths.id")
-              .where(repo_paths: {repo_id: params[:id]})
-              .select("paths.name as name, rfiles.id as id")
-              .all
-              .sort{|a, b| a.name.split('/').select(&:empty?).size <=> b.name.split('/').select(&:empty?).size}
+  def dirs_files_to_zfs(dirs, files)
     root = ZFileSystem.build(:directory, dirs[0].name)
     dirs = dirs[1..-1]
     dirs.each do |d|
@@ -163,5 +151,37 @@ module ReposHelper
       root.insert(zfs)
     end
     root
+  end
+  def repos_to_zfs(repo_id)
+    dirs = Rdir.joins(:path)
+             .joins("inner join repo_paths on repo_paths.path_id = paths.id")
+             .where(repo_paths: {repo_id: repo_id})
+             .select("paths.name as name")
+             .all
+             .sort{|a, b| a.name.split('/').select(&:empty?).size <=> b.name.split('/').select(&:empty?).size}
+    files = Rfile.joins(:path)
+              .joins("inner join repo_paths on repo_paths.path_id = paths.id")
+              .where(repo_paths: {repo_id: repo_id})
+              .select("paths.name as name, rfiles.id as id")
+              .all
+              .sort{|a, b| a.name.split('/').select(&:empty?).size <=> b.name.split('/').select(&:empty?).size}
+    dirs_files_to_zfs(dirs, files)
+  end
+  def search_repos_to_zfs(repo_id, query)
+    return repos_to_zfs if query.empty?
+    dirs = Rdir.joins(:path)
+             .joins("inner join repo_paths on repo_paths.path_id = paths.id")
+             .where(repo_paths: {repo_id: repo_id})
+             .select("paths.name as name")
+             .all
+             .sort{|a, b| a.name.split('/').select(&:empty?).size <=> b.name.split('/').select(&:empty?).size}
+    files = Rfile.joins(:path)
+              .joins("inner join repo_paths on repo_paths.path_id = paths.id")
+              .where(repo_paths: {repo_id: repo_id})
+              .where('rfiles.contents like ?', "%#{query}%")
+              .select("paths.name as name, rfiles.id as id")
+              .all
+              .sort{|a, b| a.name.split('/').select(&:empty?).size <=> b.name.split('/').select(&:empty?).size}
+    dirs_files_to_zfs(dirs, files)
   end
 end

@@ -48,6 +48,7 @@ type alias Model =
     , dirJson : NaturalJson
     , filteredList : List String
     , openedList : List String
+    , fileNameSearchQuery : String
     , searchQuery : String
     , csrfToken : String
     , repoId : Int
@@ -61,7 +62,7 @@ type alias Model =
 
 init : ( Model, Cmd Message )
 init =
-    ( Model { path = "", title = "", contents = "", rfileId = -1 } Null [] [] "" "" -1 Markdown, Cmd.none )
+    ( Model { path = "", title = "", contents = "", rfileId = -1 } Null [] [] "" "" "" -1 Markdown, Cmd.none )
 
 
 
@@ -246,7 +247,15 @@ view model =
             , HTML.a [ Attr.attribute "href" "/", Attr.attribute "data-turbolinks" "false" ] [ HTML.text "戻る" ]
             ]
         , HTML.div [ Attr.attribute "class" "tree" ]
-            [ HTML.div []
+            [ HTML.div [] [ HTML.input [ Attr.type_ "text"
+                                       , Attr.placeholder "query"
+                                       , Attr.value model.searchQuery
+                                       , HE.onInput ChangeSearchQuery
+                                       ]
+                                       []
+                          , HTML.button [ HE.onClick (SearchClick model.repoId) ] [ HTML.text "Search" ]
+            ]
+            , HTML.div []
                 [ HTML.text "[Directory]"
                 , HTML.div [] [ HTML.button [ HE.onClick AllCloseFolder ] [ HTML.text "すべてのフォルダを閉じる" ] ]
                 , HTML.div []
@@ -254,7 +263,7 @@ view model =
                     , HTML.input
                         [ Attr.type_ "text"
                         , Attr.placeholder "query"
-                        , Attr.value model.searchQuery
+                        , Attr.value model.fileNameSearchQuery
                         , HE.onInput FilterFiles
                         ]
                         []
@@ -296,6 +305,9 @@ type Message
     | AllCloseFolder
     | FilterFiles String
     | ClearFilterFiles
+    | GotSearchJson (Result Http.Error NaturalJson)
+    | SearchClick Int
+    | ChangeSearchQuery String
 
 
 type alias Param =
@@ -409,15 +421,32 @@ update message model =
             in
             ( { model
                 | filteredList = lst
-                , searchQuery = ptn
+                , fileNameSearchQuery = ptn
               }
             , Cmd.none
             )
 
         ClearFilterFiles ->
             ( { model | filteredList = []
-                      , searchQuery = "" }, Cmd.none )
+                      , fileNameSearchQuery = "" }, Cmd.none )
 
+        GotSearchJson result ->
+            case result of
+                Ok json ->
+                    ( { model
+                        | dirJson = json
+                      }
+                    , Cmd.none
+                    )
+
+                Err _ ->
+                    ( model, Cmd.none )
+
+        SearchClick repoId ->
+             ( model, Cmd.batch [ searchFilesAsync model.searchQuery repoId ])
+
+        ChangeSearchQuery text ->
+             ( { model | searchQuery = text }, Cmd.none )
 
 subscriptions : Model -> Sub Message
 subscriptions model =
@@ -435,6 +464,13 @@ projectInfoListAsync repoId =
         , expect = Http.expectJson GotDirectoryJson naturalJsonDecoder
         }
 
+searchFilesAsync : String -> Int -> Cmd Message
+searchFilesAsync query repoId =
+    Http.get
+        { url = "/api/v1/rfiles?query=" ++ query ++ "&repo_id=" ++ (String.fromInt repoId)
+        , expect = Http.expectJson GotSearchJson naturalJsonDecoder
+        }
+
 
 fileContentsAsync : String -> String -> Cmd Message
 fileContentsAsync repoId rfileId =
@@ -449,8 +485,6 @@ fileContentsDecoder =
     D.map2 ContentsMap
         (field "id" int)
         (field "contents" string)
-
-
 
 -- 下記の劣化
 -- https://qiita.com/Goryudyuma/items/e4c558bd309bc9c4de52#%E3%81%9D%E3%82%8C%E3%81%AB%E5%90%88%E3%82%8F%E3%81%9B%E3%81
