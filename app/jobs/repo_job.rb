@@ -27,7 +27,7 @@ class RepoJob < ApplicationJob
 
       if DateTime.parse(latest_commit_date) > repo.updated_at
         puts 'updating, because old.'
-        self.perform(:update, url)
+        self.perform(:update, url, repo.title || repo_name)
       else
         puts 'latest.'
       end
