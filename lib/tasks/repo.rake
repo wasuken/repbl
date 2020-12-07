@@ -11,4 +11,7 @@ namespace :repo do
   task :delete, [:url] => :environment do |task, args|
     RepoJob.perform_now(:delete, args.url)
   end
+  task :check, [:url] => :environment do |task, args|
+    RepoJob.perform_now(:check, args.url)
+  end
 end
