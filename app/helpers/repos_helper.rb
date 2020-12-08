@@ -139,6 +139,30 @@ module ReposHelper
       end
     end
   end
+  def zfs_update(zfs, repo_id, parent_id = nil)
+    path = Path.find_by(name: zfs.path)
+    unless path
+      path = Path.create(path_id: parent_id, name: zfs.path)
+      RepoPath.create(repo_id: repo_id, path_id: path.id)
+    end
+    if zfs.type == :file
+      rfile = Rfile.find_by(path_id: path.id)
+      if rfile && rfile.contents != zfs.contents
+        rfile.update(contents: zfs.contents)
+      elsif rfile
+      else
+        Rfile.create(path_id: path.id, contents: zfs.contents)
+      end
+    else
+      rdir = Rdir.find_by(path_id: path.id)
+      unless rdir
+        Rdir.create(path_id: path.id)
+      end
+      zfs.children.each do |z|
+        zfs_update(z, repo_id, path.id)
+      end
+    end
+  end
   def dirs_files_to_zfs(dirs, files)
     root = ZFileSystem.build(:directory, dirs[0].name)
     dirs = dirs[1..-1]

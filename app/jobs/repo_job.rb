@@ -14,8 +14,8 @@ class RepoJob < ApplicationJob
     when :insert
       insert(url, title)
     when :update
-      Repo.find_by(url: url).destroy
-      insert(url, title)
+      repo = Repo.find_by(url: url)
+      zfs_update(remote_zip_to_zfs(url, ".*.md$"), repo.id)
     when :delete
       Repo.find_by(url: url).destroy
     when :check
