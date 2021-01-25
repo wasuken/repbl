@@ -163,6 +163,40 @@ module ReposHelper
       end
     end
   end
+  def repo_update(url, file_match_ptn=".*", exc_ptns=["/\..*"])
+    repo_id = Repo.find_by(url: url).id
+    inserted_path_list = []
+    URI.open(url) do |file|
+      # なんでここに非Factoryが!?
+      root = ZDir.new(:root, "root")
+      Zip::File.open_buffer(file.read) do |zf|
+        zf.each do |entry|
+          e_name_utf8 = entry.name.force_encoding('UTF-8')
+          inserted_path_list << e_name_utf8
+          if (entry.ftype == :file && !e_name_utf8.match(file_match_ptn)) ||
+             (entry.ftype == :directory && exc_match(entry.name, exc_ptns))
+            next
+          end
+          if entry.ftype == :directory && e_name_utf8.match(file_match_ptn)
+            next
+          end
+          zfs = ZFileSystem.build(entry.ftype, e_name_utf8)
+          zfs.contents = entry.get_input_stream.read.force_encoding('UTF-8') if zfs.type == :file
+          root.insert(zfs)
+        end
+      end
+      Path.joins('inner join repo_paths on repo_paths.path_id = paths.id')
+        .where(repo_paths: {repo_id: repo_id})
+        .select("paths.name as name")
+        .all
+        .each do |p|
+        unless inserted_path_list.include?(p.name)
+          p.destroy
+        end
+      end
+      zfs_update(root.children[0], repo_id)
+    end
+  end
   def dirs_files_to_zfs(dirs, files)
     root = ZFileSystem.build(:directory, dirs[0].name)
     dirs = dirs[1..-1]

@@ -19,7 +19,6 @@ class Api::V1::ReposController < ApplicationController
   end
   def create
     if Token.find_by(token: params[:token])
-      # TODO: JOBにやらせる。-> JOBにやらせるまでもないのでは...?
       repo = Repo.create(url: params[:url], title: params[:title])
       zfs_insert(remote_zip_to_zfs(params[:url], ".*.md$"), repo.id)
     else
