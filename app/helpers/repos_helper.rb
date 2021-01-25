@@ -191,7 +191,7 @@ module ReposHelper
         .all
         .each do |p|
         unless inserted_path_list.include?(p.name)
-          p.destroy
+          Path.find_by(name: p.name).destroy
         end
       end
       zfs_update(root.children[0], repo_id)

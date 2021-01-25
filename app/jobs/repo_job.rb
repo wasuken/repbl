@@ -27,7 +27,7 @@ class RepoJob < ApplicationJob
       latest_commit_date = g.repos.commits.list(user, repo_name).body.first.commit.committer.date
 
       if DateTime.parse(latest_commit_date) > repo.updated_at
-        puts 'updating, because old.'
+        puts "[#{url}] updating, because old."
         self.perform(:update, url, repo.title || repo_name)
       else
         puts 'latest.'
