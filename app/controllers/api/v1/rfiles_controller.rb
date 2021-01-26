@@ -1,6 +1,6 @@
 require 'json'
 class Api::V1::RfilesController < ApplicationController
-  include ReposHelper
+  include Zfs
   def index
     query = params[:query]
     repo_id = params[:repo_id]

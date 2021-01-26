@@ -2,7 +2,7 @@
 require 'json'
 
 class Api::V1::ReposController < ApplicationController
-  include ReposHelper
+  include Zfs
   def index
     render json: Repo.select('id, url, title')
   end

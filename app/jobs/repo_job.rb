@@ -1,7 +1,7 @@
 require 'github_api'
 
 class RepoJob < ApplicationJob
-  include ReposHelper
+  include Zfs
   queue_as :default
 
   def insert(url, title)
