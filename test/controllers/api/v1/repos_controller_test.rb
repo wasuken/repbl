@@ -3,7 +3,7 @@ require 'test_helper'
 require 'json'
 
 class Api::V1::ReposControllerTest < ActionDispatch::IntegrationTest
-  include ReposHelper
+  include Zfs
   def repo_insert(url, title)
     repo = Repo.create(url: url, title: title)
     zfs_insert(remote_zip_to_zfs(url, ".*.md$"), repo.id)

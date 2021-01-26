@@ -2,7 +2,7 @@
 require 'test_helper'
 
 class Api::V1::RfilesControllerTest < ActionDispatch::IntegrationTest
-  include ReposHelper
+  include Zfs
   def repo_insert(url, title)
     repo = Repo.create(url: url, title: title)
     zfs_insert(remote_zip_to_zfs(url, ".*.md$"), repo.id)
