@@ -49,14 +49,24 @@ view : Model -> Html Message
 view model =
     -- The inline style is being used for example purposes in order to keep this example simple and
     -- avoid loading additional resources. Use a proper stylesheet when building your own app.
-    div []
+    div [ style "color" "white" ]
         [ h1 [ style "display" "flex", style "justify-content" "center" ]
             [ text "repbl - Repository Blog -" ]
         , h3 []
             [ text "一覧" ]
         , ul []
-            (List.map (\p -> li [] [ a [ attribute "data-turbolinks" "false"
-                                       , href ("/repos/" ++ String.fromInt p.id) ] [ text p.title ] ]) model.projects)
+            (List.map
+                (\p ->
+                    li []
+                        [ a
+                            [ attribute "data-turbolinks" "false"
+                            , href ("/repos/" ++ String.fromInt p.id)
+                            ]
+                            [ text p.title ]
+                        ]
+                )
+                model.projects
+            )
         ]
 
 

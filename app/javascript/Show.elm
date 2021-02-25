@@ -241,62 +241,73 @@ view model =
         , Attr.style "width" "100%"
         , Attr.style "max-height" "100%"
         ]
-        [ HTML.div []
-            [ HTML.button [ HE.onClick (ChangeStatus Markdown) ] [ HTML.text "Markdown" ]
-            , HTML.button [ HE.onClick (ChangeStatus HTML) ] [ HTML.text "HTML" ]
-            , HTML.a [ Attr.attribute "href" "/", Attr.attribute "data-turbolinks" "false" ] [ HTML.text "戻る" ]
+        [ HTML.nav
+            [ Attr.style "padding" "5px"
+            , Attr.attribute "class" "navbar navbar-expand-lg navbar-light bg-light d-flex justify-content-between"
             ]
-        , HTML.div [ Attr.attribute "class" "tree" ]
-            [ HTML.div []
-                [ HTML.h2 [] [ HTML.text "[Directory]" ]
-                , HTML.div
-                    [ Attr.style "border" "2px solid black"
-                    , Attr.style "padding" "5px"
+            [ HTML.div [ Attr.attribute "class" "form-inline" ]
+                [ HTML.input
+                    [ Attr.type_ "text"
+                    , Attr.placeholder "Grep検索"
+                    , Attr.value model.searchQuery
+                    , HE.onInput ChangeSearchQuery
+                    , Attr.attribute "class" "form-control"
                     ]
-                    [ HTML.h4 [] [ HTML.text "Grep検索" ]
-                    , HTML.div []
-                        [ HTML.input
-                            [ Attr.type_ "text"
-                            , Attr.placeholder "query"
-                            , Attr.value model.searchQuery
-                            , HE.onInput ChangeSearchQuery
-                            ]
-                            []
-                        , HTML.button [ HE.onClick (SearchClick model.repoId) ] [ HTML.text "Search" ]
-                        , HTML.button [ HE.onClick (RequestDirectoryJson model.repoId) ] [ HTML.text "リセット" ]
-                        ]
-                    , HTML.div []
-                        [ HTML.h4 [] [ HTML.text "File名検索" ]
-                        , HTML.input
-                            [ Attr.type_ "text"
-                            , Attr.placeholder "query"
-                            , Attr.value model.fileNameSearchQuery
-                            , HE.onInput FilterFiles
-                            ]
-                            []
-                        , HTML.button [ HE.onClick ClearFilterFiles ] [ HTML.text "リセット" ]
-                        ]
+                    []
+                , HTML.button
+                    [ Attr.attribute "class" "btn btn-outline-primary"
+                    , HE.onClick (SearchClick model.repoId)
                     ]
+                    [ HTML.text "Search" ]
+                , HTML.button [ Attr.attribute "class" "btn btn-outline-primary", HE.onClick (RequestDirectoryJson model.repoId) ] [ HTML.text "リセット" ]
                 ]
-            , HTML.div [] [ HTML.button [ HE.onClick AllCloseFolder ] [ HTML.text "すべてのフォルダを閉じる" ] ]
-            , HTML.ul []
-                [ naturalJsonToHTML model.dirJson model.repoId 0 "" model ]
+            , HTML.div []
+                [ HTML.button [ Attr.attribute "class" "btn btn-outline-primary", HE.onClick (ChangeStatus Markdown) ]
+                    [ HTML.text "Markdown" ]
+                , HTML.button [ Attr.attribute "class" "btn btn-outline-primary", HE.onClick (ChangeStatus HTML) ] [ HTML.text "HTML" ]
+                , HTML.a [ Attr.attribute "href" "/", Attr.attribute "data-turbolinks" "false" ] [ HTML.text "戻る" ]
+                ]
+            , HTML.div [ Attr.attribute "class" "form-inline" ]
+                [ HTML.input
+                    [ Attr.type_ "text"
+                    , Attr.placeholder "File名検索"
+                    , Attr.value model.fileNameSearchQuery
+                    , HE.onInput FilterFiles
+                    , Attr.attribute "class" "form-control"
+                    ]
+                    []
+                , HTML.button [ Attr.attribute "class" "btn btn-outline-primary", HE.onClick ClearFilterFiles ] [ HTML.text "リセット" ]
+                ]
             ]
-        , HTML.div
-            [ Attr.style "float" "left"
-            , Attr.style "margin-left" "30px"
-            , Attr.style "overflow" "auto"
-            , Attr.style "width" "60%"
-            , Attr.style "height" "100%"
-            , Attr.attribute "class" "markdown-body"
-            ]
-          <|
-            if model.contentsStatus == Markdown then
-                List.map (\x -> HTML.p [] [ HTML.text x ])
-                    (String.split "\n" model.cursorFile.contents)
+        , HTML.div [ Attr.attribute "class" "d-flex justify-content-between" ]
+            [ HTML.div [ Attr.attribute "class" "tree sidebar w-25 p-3" ]
+                [ HTML.div []
+                    [ HTML.button
+                        [ Attr.attribute "class" "btn btn-outline-primary"
+                        , HE.onClick AllCloseFolder
+                        ]
+                        [ HTML.text "すべてのフォルダを閉じる" ]
+                    ]
+                , HTML.ul []
+                    [ naturalJsonToHTML model.dirJson model.repoId 0 "" model ]
+                ]
+            , HTML.div
+                [ Attr.style "float" "left"
+                , Attr.style "margin-left" "30px"
+                , Attr.style "overflow" "auto"
+                , Attr.style "min-width" "70%"
+                , Attr.style "max-width" "100%"
+                , Attr.style "height" "100%"
+                , Attr.attribute "class" "markdown-body w-75 p-3"
+                ]
+              <|
+                if model.contentsStatus == Markdown then
+                    List.map (\x -> HTML.p [] [ HTML.text x ])
+                        (String.split "\n" model.cursorFile.contents)
 
-            else
-                Markdown.toHtml Nothing model.cursorFile.contents
+                else
+                    Markdown.toHtml Nothing model.cursorFile.contents
+            ]
         ]
 
 
