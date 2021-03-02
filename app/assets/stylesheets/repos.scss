@@ -8,6 +8,12 @@ body{
   background-color: #373434;
 }
 
+.top-title {
+  float: left;
+  margin-top: 50px;
+  background-color: #f8f9fa;
+}
+
 .sidebar {
   position: -webkit-sticky; /* for Safari users */
   position: sticky;
@@ -17,7 +23,6 @@ body{
   margin-top: 50px;
   padding-top: 40px;
   background-color: #f8f9fa;
-  color: black;
 }
 
 .contents {
@@ -36,25 +41,13 @@ body{
 .recommended-box {
   margin-top: 40px;
   background-color: #f8f9fa;
-  color: black;
+  a {
+	color: red !important;
+  }
+  a:hover{
+	color: blue !important;
+  }
 }
-
-// .tree {
-// 	float: left;
-// 	position: relative;
-// 	background: white;
-// 	margin-top: 20px;
-// 	padding: 30px;
-// 	font-size: .85rem;
-// 	font-weight: 400;
-// 	line-height: 1.5;
-// 	color: #212529;
-// 	heigth: 100%;
-// 	width: 100%;
-// 	max-height: 700px;
-// 	max-width: 300px;
-// 	overflow: scroll;
-// }
 
 .tree ul {
   padding-left: 5px;
@@ -96,7 +89,6 @@ body{
   overflow: auto;
   min-height: 300px;
   margin-top: 50px;
-  color: black;
   background-color: #f8f9fa;
   word-break : break-all;
   // まるぱく

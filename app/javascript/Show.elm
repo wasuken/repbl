@@ -32,7 +32,7 @@ type ContentsStatus
 
 
 type alias ContentsMap =
-    { id : Int, contents : String }
+    { id : Int, contents : String, path : String, title : String }
 
 
 type alias RecommendedContentsMap =
@@ -166,6 +166,25 @@ filterFiles json ptn currentPath =
         children
 
 
+recommendedToCardsHTML : String -> List RecommendedContentsMap -> Html Message
+recommendedToCardsHTML repoId list =
+    HTML.div []
+        (List.map
+            (\rec ->
+                HTML.div [ Attr.attribute "class" "card" ]
+                    [ HTML.div [ Attr.attribute "class" "card-body" ]
+                        [ HTML.h5 [ Attr.attribute "class" "card-title" ]
+                            [ HTML.text rec.name ]
+                        , HTML.p [] [ HTML.text rec.contents ]
+                        , HTML.a [ HE.onClick (FileClick repoId rec.id) ]
+                            [ HTML.text "見る" ]
+                        ]
+                    ]
+            )
+            list
+        )
+
+
 naturalJsonToHTML : NaturalJson -> Int -> Int -> String -> Model -> Html Message
 naturalJsonToHTML fs repoId level currentPath model =
     let
@@ -245,7 +264,7 @@ view model =
         [ Attr.attribute "class" "contents" ]
         [ HTML.nav
             [ Attr.style "padding" "5px"
-            , Attr.attribute "class" "navbar navbar-expand-lg navbar-light bg-light d-flex justify-content-between"
+            , Attr.attribute "class" "fixed-top navbar navbar-expand-lg navbar-light bg-light d-flex justify-content-between"
             ]
             [ HTML.div [ Attr.attribute "class" "form-inline" ]
                 [ HTML.input
@@ -295,6 +314,9 @@ view model =
                 ]
             , HTML.div [ Attr.attribute "class" "d-flex flex-column main" ]
                 [ HTML.div
+                    [ Attr.attribute "class" "w-75 p-3 top-title" ]
+                    [ HTML.text ("File >> " ++ model.cursorFile.title) ]
+                , HTML.div
                     [ Attr.attribute "class" "markdown-body w-75 p-3"
                     ]
                   <|
@@ -306,7 +328,10 @@ view model =
                         Markdown.toHtml Nothing model.cursorFile.contents
                 , HTML.div
                     [ Attr.attribute "class" "recommended-box w-75 p-3" ]
-                    [ HTML.text "box!" ]
+                    [ HTML.h3 [] [ HTML.text "こちらの記事もおすすめ" ]
+                    , HTML.hr [] []
+                    , recommendedToCardsHTML (String.fromInt model.repoId) model.recommmendedFiles
+                    ]
                 ]
             ]
         ]
@@ -393,13 +418,13 @@ update message model =
                 Ok cm ->
                     ( { model
                         | cursorFile =
-                            { title = model.cursorFile.title
-                            , path = model.cursorFile.path
+                            { title = cm.title
+                            , path = cm.path
                             , contents = cm.contents
                             , rfileId = cm.id
                             }
                       }
-                    , Cmd.none
+                    , Cmd.batch [ recommendedFileContentsAsync (String.fromInt model.repoId) (String.fromInt cm.id) ]
                     )
 
                 Err _ ->
@@ -524,7 +549,7 @@ fileContentsAsync repoId rfileId =
 recommendedFileContentsAsync : String -> String -> Cmd Message
 recommendedFileContentsAsync repoId rfileId =
     Http.get
-        { url = "/api/v1/repos/" ++ repoId ++ "/" ++ rfileId
+        { url = "/api/v1/repos/recommended/" ++ repoId ++ "/" ++ rfileId
         , expect = Http.expectJson GotRecommendedFileContentsJson (D.list recommendedFileContentsDecoder)
         }
 
@@ -539,9 +564,11 @@ recommendedFileContentsDecoder =
 
 fileContentsDecoder : D.Decoder ContentsMap
 fileContentsDecoder =
-    D.map2 ContentsMap
+    D.map4 ContentsMap
         (field "id" int)
         (field "contents" string)
+        (field "title" string)
+        (field "path" string)
 
 
 
