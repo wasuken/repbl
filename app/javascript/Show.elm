@@ -32,7 +32,11 @@ type ContentsStatus
 
 
 type alias ContentsMap =
-    { id : Int, contents : String }
+    { id : Int, contents : String, path : String, title : String }
+
+
+type alias RecommendedContentsMap =
+    { id : Int, contents : String, name : String }
 
 
 type alias FileInfo =
@@ -53,6 +57,7 @@ type alias Model =
     , csrfToken : String
     , repoId : Int
     , contentsStatus : ContentsStatus
+    , recommmendedFiles : List RecommendedContentsMap
     }
 
 
@@ -62,7 +67,7 @@ type alias Model =
 
 init : ( Model, Cmd Message )
 init =
-    ( Model { path = "", title = "", contents = "", rfileId = -1 } Null [] [] "" "" "" -1 Markdown, Cmd.none )
+    ( Model { path = "", title = "", contents = "", rfileId = -1 } Null [] [] "" "" "" -1 Markdown [], Cmd.none )
 
 
 
@@ -161,6 +166,25 @@ filterFiles json ptn currentPath =
         children
 
 
+recommendedToCardsHTML : String -> List RecommendedContentsMap -> Html Message
+recommendedToCardsHTML repoId list =
+    HTML.div []
+        (List.map
+            (\rec ->
+                HTML.div [ Attr.attribute "class" "card" ]
+                    [ HTML.div [ Attr.attribute "class" "card-body" ]
+                        [ HTML.h5 [ Attr.attribute "class" "card-title" ]
+                            [ HTML.text rec.name ]
+                        , HTML.p [] [ HTML.text rec.contents ]
+                        , HTML.a [ HE.onClick (FileClick repoId rec.id) ]
+                            [ HTML.text "見る" ]
+                        ]
+                    ]
+            )
+            list
+        )
+
+
 naturalJsonToHTML : NaturalJson -> Int -> Int -> String -> Model -> Html Message
 naturalJsonToHTML fs repoId level currentPath model =
     let
@@ -237,13 +261,10 @@ naturalJsonToHTML fs repoId level currentPath model =
 view : Model -> Html Message
 view model =
     HTML.div
-        [ Attr.style "height" "100%"
-        , Attr.style "width" "100%"
-        , Attr.style "max-height" "100%"
-        ]
+        [ Attr.attribute "class" "contents" ]
         [ HTML.nav
             [ Attr.style "padding" "5px"
-            , Attr.attribute "class" "navbar navbar-expand-lg navbar-light bg-light d-flex justify-content-between"
+            , Attr.attribute "class" "fixed-top navbar navbar-expand-lg navbar-light bg-light d-flex justify-content-between"
             ]
             [ HTML.div [ Attr.attribute "class" "form-inline" ]
                 [ HTML.input
@@ -291,22 +312,27 @@ view model =
                 , HTML.ul []
                     [ naturalJsonToHTML model.dirJson model.repoId 0 "" model ]
                 ]
-            , HTML.div
-                [ Attr.style "float" "left"
-                , Attr.style "margin-left" "30px"
-                , Attr.style "overflow" "auto"
-                , Attr.style "min-width" "70%"
-                , Attr.style "max-width" "100%"
-                , Attr.style "height" "100%"
-                , Attr.attribute "class" "markdown-body w-75 p-3"
-                ]
-              <|
-                if model.contentsStatus == Markdown then
-                    List.map (\x -> HTML.p [] [ HTML.text x ])
-                        (String.split "\n" model.cursorFile.contents)
+            , HTML.div [ Attr.attribute "class" "d-flex flex-column main" ]
+                [ HTML.div
+                    [ Attr.attribute "class" "w-75 p-3 top-title" ]
+                    [ HTML.text ("File >> " ++ model.cursorFile.title) ]
+                , HTML.div
+                    [ Attr.attribute "class" "markdown-body w-75 p-3"
+                    ]
+                  <|
+                    if model.contentsStatus == Markdown then
+                        List.map (\x -> HTML.p [] [ HTML.text x ])
+                            (String.split "\n" model.cursorFile.contents)
 
-                else
-                    Markdown.toHtml Nothing model.cursorFile.contents
+                    else
+                        Markdown.toHtml Nothing model.cursorFile.contents
+                , HTML.div
+                    [ Attr.attribute "class" "recommended-box w-75 p-3" ]
+                    [ HTML.h3 [] [ HTML.text "こちらの記事もおすすめ" ]
+                    , HTML.hr [] []
+                    , recommendedToCardsHTML (String.fromInt model.repoId) model.recommmendedFiles
+                    ]
+                ]
             ]
         ]
 
@@ -320,6 +346,7 @@ type Message
     | GotDirectoryJson (Result Http.Error NaturalJson)
     | GotParam Param
     | GotFileContentsJson (Result Http.Error ContentsMap)
+    | GotRecommendedFileContentsJson (Result Http.Error (List RecommendedContentsMap))
     | FileClick String Int
     | ChangeStatus ContentsStatus
     | DirOC String
@@ -391,14 +418,22 @@ update message model =
                 Ok cm ->
                     ( { model
                         | cursorFile =
-                            { title = model.cursorFile.title
-                            , path = model.cursorFile.path
+                            { title = cm.title
+                            , path = cm.path
                             , contents = cm.contents
                             , rfileId = cm.id
                             }
                       }
-                    , Cmd.none
+                    , Cmd.batch [ recommendedFileContentsAsync (String.fromInt model.repoId) (String.fromInt cm.id) ]
                     )
+
+                Err _ ->
+                    ( model, Cmd.none )
+
+        GotRecommendedFileContentsJson result ->
+            case result of
+                Ok rcm ->
+                    ( { model | recommmendedFiles = rcm }, Cmd.none )
 
                 Err _ ->
                     ( model, Cmd.none )
@@ -511,11 +546,29 @@ fileContentsAsync repoId rfileId =
         }
 
 
-fileContentsDecoder : D.Decoder ContentsMap
-fileContentsDecoder =
-    D.map2 ContentsMap
+recommendedFileContentsAsync : String -> String -> Cmd Message
+recommendedFileContentsAsync repoId rfileId =
+    Http.get
+        { url = "/api/v1/repos/recommended/" ++ repoId ++ "/" ++ rfileId
+        , expect = Http.expectJson GotRecommendedFileContentsJson (D.list recommendedFileContentsDecoder)
+        }
+
+
+recommendedFileContentsDecoder : D.Decoder RecommendedContentsMap
+recommendedFileContentsDecoder =
+    D.map3 RecommendedContentsMap
         (field "id" int)
         (field "contents" string)
+        (field "name" string)
+
+
+fileContentsDecoder : D.Decoder ContentsMap
+fileContentsDecoder =
+    D.map4 ContentsMap
+        (field "id" int)
+        (field "contents" string)
+        (field "title" string)
+        (field "path" string)
 
 
 

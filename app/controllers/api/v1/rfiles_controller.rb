@@ -14,11 +14,19 @@ class Api::V1::RfilesController < ApplicationController
   def show
     repo_id = params[:repoId]
     rfile_id = params[:rfileId]
-    render json: Rfile.joins(:path)
-             .joins("inner join repo_paths on repo_paths.path_id = paths.id")
-             .where(repo_paths: {repo_id: repo_id})
-             .where(rfiles: {id: rfile_id})
-             .select("rfiles.contents as contents, rfiles.id as id")
-             .first
+    rf = Rfile.joins(:path)
+           .joins("inner join repo_paths on repo_paths.path_id = paths.id")
+           .where(repo_paths: {repo_id: repo_id})
+           .where(rfiles: {id: rfile_id})
+           .select("rfiles.contents as contents, rfiles.id as id, paths.name as name")
+           .first
+    name = File.basename(rf.name).split('.')[0..-2].join('.')
+    name = File.basename(rf.name) if name.empty?
+    render json: {
+             id: rf.id,
+             path: rf.name,
+             title: name,
+             contents: rf.contents
+           }
   end
 end

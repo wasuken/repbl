@@ -12,6 +12,18 @@ class Api::V1::ReposControllerTest < ActionDispatch::IntegrationTest
     get("/api/v1/repos")
     assert_response :success
   end
+  test "should_get_recommended" do
+    repo_insert('https://github.com/wasuken/nippo/archive/master.zip', '日報')
+    repo = Repo.all.first
+    rf = Rfile
+           .joins(:path)
+           .joins("inner join repo_paths on repo_paths.path_id = paths.id")
+           .where('repo_paths.repo_id = ?', repo.id)
+           .select('rfiles.id as id')
+           .first
+    get("/api/v1/repos/recommended/#{repo.id}/#{rf.id}")
+    assert_response :success
+  end
   test "should_delete_repo" do
     tk = Token.gen_token.token
     id = Repo.create(url: "hoge", title: "hoge").id
