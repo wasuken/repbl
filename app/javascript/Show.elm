@@ -35,6 +35,10 @@ type alias ContentsMap =
     { id : Int, contents : String }
 
 
+type alias RecommendedContentsMap =
+    { id : Int, contents : String, name : String }
+
+
 type alias FileInfo =
     { path : String
     , title : String
@@ -53,6 +57,7 @@ type alias Model =
     , csrfToken : String
     , repoId : Int
     , contentsStatus : ContentsStatus
+    , recommmendedFiles : List RecommendedContentsMap
     }
 
 
@@ -62,7 +67,7 @@ type alias Model =
 
 init : ( Model, Cmd Message )
 init =
-    ( Model { path = "", title = "", contents = "", rfileId = -1 } Null [] [] "" "" "" -1 Markdown, Cmd.none )
+    ( Model { path = "", title = "", contents = "", rfileId = -1 } Null [] [] "" "" "" -1 Markdown [], Cmd.none )
 
 
 
@@ -316,6 +321,7 @@ type Message
     | GotDirectoryJson (Result Http.Error NaturalJson)
     | GotParam Param
     | GotFileContentsJson (Result Http.Error ContentsMap)
+    | GotRecommendedFileContentsJson (Result Http.Error (List RecommendedContentsMap))
     | FileClick String Int
     | ChangeStatus ContentsStatus
     | DirOC String
@@ -395,6 +401,14 @@ update message model =
                       }
                     , Cmd.none
                     )
+
+                Err _ ->
+                    ( model, Cmd.none )
+
+        GotRecommendedFileContentsJson result ->
+            case result of
+                Ok rcm ->
+                    ( { model | recommmendedFiles = rcm }, Cmd.none )
 
                 Err _ ->
                     ( model, Cmd.none )
@@ -505,6 +519,22 @@ fileContentsAsync repoId rfileId =
         { url = "/api/v1/rfiles/" ++ repoId ++ "/" ++ rfileId
         , expect = Http.expectJson GotFileContentsJson fileContentsDecoder
         }
+
+
+recommendedFileContentsAsync : String -> String -> Cmd Message
+recommendedFileContentsAsync repoId rfileId =
+    Http.get
+        { url = "/api/v1/repos/" ++ repoId ++ "/" ++ rfileId
+        , expect = Http.expectJson GotRecommendedFileContentsJson (D.list recommendedFileContentsDecoder)
+        }
+
+
+recommendedFileContentsDecoder : D.Decoder RecommendedContentsMap
+recommendedFileContentsDecoder =
+    D.map3 RecommendedContentsMap
+        (field "id" int)
+        (field "contents" string)
+        (field "name" string)
 
 
 fileContentsDecoder : D.Decoder ContentsMap
