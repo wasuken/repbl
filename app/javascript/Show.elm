@@ -237,10 +237,7 @@ naturalJsonToHTML fs repoId level currentPath model =
 view : Model -> Html Message
 view model =
     HTML.div
-        [ Attr.style "height" "100%"
-        , Attr.style "width" "100%"
-        , Attr.style "max-height" "100%"
-        ]
+        [ Attr.attribute "class" "contents" ]
         [ HTML.nav
             [ Attr.style "padding" "5px"
             , Attr.attribute "class" "navbar navbar-expand-lg navbar-light bg-light d-flex justify-content-between"
@@ -291,22 +288,21 @@ view model =
                 , HTML.ul []
                     [ naturalJsonToHTML model.dirJson model.repoId 0 "" model ]
                 ]
-            , HTML.div
-                [ Attr.style "float" "left"
-                , Attr.style "margin-left" "30px"
-                , Attr.style "overflow" "auto"
-                , Attr.style "min-width" "70%"
-                , Attr.style "max-width" "100%"
-                , Attr.style "height" "100%"
-                , Attr.attribute "class" "markdown-body w-75 p-3"
-                ]
-              <|
-                if model.contentsStatus == Markdown then
-                    List.map (\x -> HTML.p [] [ HTML.text x ])
-                        (String.split "\n" model.cursorFile.contents)
+            , HTML.div [ Attr.attribute "class" "d-flex flex-column main" ]
+                [ HTML.div
+                    [ Attr.attribute "class" "markdown-body w-75 p-3"
+                    ]
+                  <|
+                    if model.contentsStatus == Markdown then
+                        List.map (\x -> HTML.p [] [ HTML.text x ])
+                            (String.split "\n" model.cursorFile.contents)
 
-                else
-                    Markdown.toHtml Nothing model.cursorFile.contents
+                    else
+                        Markdown.toHtml Nothing model.cursorFile.contents
+                , HTML.div
+                    [ Attr.attribute "class" "recommended-box w-75 p-3" ]
+                    [ HTML.text "box!" ]
+                ]
             ]
         ]
 
