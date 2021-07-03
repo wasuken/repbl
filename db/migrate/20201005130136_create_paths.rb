@@ -6,6 +6,6 @@ class CreatePaths < ActiveRecord::Migration[6.0]
 
       t.timestamps
     end
-    add_foreign_key :paths, :paths
+    add_foreign_key :paths, :paths, name: "fk_paths_paths"
   end
 end

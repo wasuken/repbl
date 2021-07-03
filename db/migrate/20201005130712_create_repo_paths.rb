@@ -6,7 +6,7 @@ class CreateRepoPaths < ActiveRecord::Migration[6.0]
 
       t.timestamps
     end
-    add_foreign_key :repo_paths, :repos, on_delete: :cascade
-    add_foreign_key :repo_paths, :paths, on_delete: :cascade
+    add_foreign_key :repo_paths, :repos, on_delete: :cascade, name: "fk_repo_paths_repos"
+    add_foreign_key :repo_paths, :paths, on_delete: :cascade, name: "fk_repo_paths_paths"
   end
 end

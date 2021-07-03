@@ -4,6 +4,6 @@ class CreateRdirs < ActiveRecord::Migration[6.0]
       t.references :path, null: false, foreign_key: true
       t.timestamps
     end
-    add_foreign_key :rdirs, :paths, on_delete: :cascade
+    add_foreign_key :rdirs, :paths, on_delete: :cascade, name: "fk_rdirs_paths"
   end
 end
