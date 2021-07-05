@@ -264,10 +264,12 @@ view model =
         [ Attr.attribute "class" "contents" ]
         [ HTML.nav
             [ Attr.style "padding" "5px"
-            , Attr.attribute "class" "fixed-top navbar navbar-expand-lg navbar-light bg-light d-flex justify-content-between"
+            , Attr.attribute "class" "fixed-top bd-navbar navbar navbar-expand-md navbar-light bg-light d-flex justify-content-between"
             ]
-            [ HTML.div [ Attr.attribute "class" "form-inline" ]
-                [ HTML.input
+            [ HTML.div [ Attr.attribute "class" "d-flex justify-content-start" ]
+                [ HTML.div [ ]
+                  [
+                  HTML.input
                     [ Attr.type_ "text"
                     , Attr.placeholder "Grep検索"
                     , Attr.value model.searchQuery
@@ -275,33 +277,25 @@ view model =
                     , Attr.attribute "class" "form-control"
                     ]
                     []
+                  ]
                 , HTML.button
                     [ Attr.attribute "class" "btn btn-outline-primary"
                     , HE.onClick (SearchClick model.repoId)
                     ]
                     [ HTML.text "Search" ]
-                , HTML.button [ Attr.attribute "class" "btn btn-outline-primary", HE.onClick (RequestDirectoryJson model.repoId) ] [ HTML.text "リセット" ]
+                , HTML.button [ Attr.attribute "class" "btn btn-outline-primary", HE.onClick (RequestDirectoryJson model.repoId) ] [ HTML.text "Reset" ]
                 ]
-            , HTML.div []
+            , HTML.div [ Attr.attribute "class" "d-flex justify-content-start" ]
                 [ HTML.button [ Attr.attribute "class" "btn btn-outline-primary", HE.onClick (ChangeStatus Markdown) ]
                     [ HTML.text "Markdown" ]
                 , HTML.button [ Attr.attribute "class" "btn btn-outline-primary", HE.onClick (ChangeStatus HTML) ] [ HTML.text "HTML" ]
-                , HTML.a [ Attr.attribute "href" "/", Attr.attribute "data-turbolinks" "false" ] [ HTML.text "戻る" ]
-                ]
-            , HTML.div [ Attr.attribute "class" "form-inline" ]
-                [ HTML.input
-                    [ Attr.type_ "text"
-                    , Attr.placeholder "File名検索"
-                    , Attr.value model.fileNameSearchQuery
-                    , HE.onInput FilterFiles
-                    , Attr.attribute "class" "form-control"
-                    ]
-                    []
-                , HTML.button [ Attr.attribute "class" "btn btn-outline-primary", HE.onClick ClearFilterFiles ] [ HTML.text "リセット" ]
+                , HTML.a [ Attr.attribute "class" "btn btn-outline-primary",
+                           Attr.attribute "href" "/",
+                           Attr.attribute "data-turbolinks" "false" ] [ HTML.text "戻る" ]
                 ]
             ]
-        , HTML.div [ Attr.attribute "class" "d-flex justify-content-between" ]
-            [ HTML.div [ Attr.attribute "class" "tree sidebar w-25 p-3" ]
+        , HTML.div [ Attr.attribute "class" "row d-flex justify-content-between" ]
+            [ HTML.div [ Attr.attribute "class" "tree sidebar w-25 p-3 col-md-3" ]
                 [ HTML.div []
                     [ HTML.button
                         [ Attr.attribute "class" "btn btn-outline-primary"
@@ -312,7 +306,7 @@ view model =
                 , HTML.ul []
                     [ naturalJsonToHTML model.dirJson model.repoId 0 "" model ]
                 ]
-            , HTML.div [ Attr.attribute "class" "d-flex flex-column main" ]
+            , HTML.div [ Attr.attribute "class" "d-flex flex-column main col-md-8" ]
                 [ HTML.div
                     [ Attr.attribute "class" "w-75 p-3 top-title" ]
                     [ HTML.text ("File >> " ++ model.cursorFile.title) ]

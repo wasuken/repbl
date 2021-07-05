@@ -16,7 +16,7 @@ class Api::V1::ReposController < ApplicationController
     rfile = Rfile
               .joins(:path)
               .select('paths.name as name, rfiles.id as rid')
-              .where('rid = ?', rfile_id)
+              .where('rfiles.id = ?', rfile_id)
               .first
     q = rfile.name.split('/')[-1].split('.')[0].gsub(/-[0-9]+$/, '')
     recs = Rfile.joins(:path)

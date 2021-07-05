@@ -12,58 +12,58 @@
 
 ActiveRecord::Schema.define(version: 2020_10_18_135440) do
 
-  create_table "paths", force: :cascade do |t|
+  create_table "paths", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin", force: :cascade do |t|
     t.string "name"
-    t.integer "path_id"
+    t.bigint "path_id"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
     t.index ["path_id"], name: "index_paths_on_path_id"
   end
 
-  create_table "rdirs", force: :cascade do |t|
-    t.integer "path_id", null: false
+  create_table "rdirs", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin", force: :cascade do |t|
+    t.bigint "path_id", null: false
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
     t.index ["path_id"], name: "index_rdirs_on_path_id"
   end
 
-  create_table "repo_paths", force: :cascade do |t|
-    t.integer "repo_id", null: false
-    t.integer "path_id", null: false
+  create_table "repo_paths", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin", force: :cascade do |t|
+    t.bigint "repo_id", null: false
+    t.bigint "path_id", null: false
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
     t.index ["path_id"], name: "index_repo_paths_on_path_id"
     t.index ["repo_id"], name: "index_repo_paths_on_repo_id"
   end
 
-  create_table "repos", force: :cascade do |t|
+  create_table "repos", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin", force: :cascade do |t|
     t.string "title"
     t.string "url"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
   end
 
-  create_table "rfiles", force: :cascade do |t|
-    t.string "contents"
-    t.integer "path_id", null: false
+  create_table "rfiles", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin", force: :cascade do |t|
+    t.text "contents"
+    t.bigint "path_id", null: false
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
     t.index ["path_id"], name: "index_rfiles_on_path_id"
   end
 
-  create_table "tokens", force: :cascade do |t|
+  create_table "tokens", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin", force: :cascade do |t|
     t.string "token", null: false
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
   end
 
-  add_foreign_key "paths", "paths"
+  add_foreign_key "paths", "paths", name: "fk_paths_paths"
   add_foreign_key "rdirs", "paths"
-  add_foreign_key "rdirs", "paths", on_delete: :cascade
+  add_foreign_key "rdirs", "paths", name: "fk_rdirs_paths", on_delete: :cascade
   add_foreign_key "repo_paths", "paths"
-  add_foreign_key "repo_paths", "paths", on_delete: :cascade
+  add_foreign_key "repo_paths", "paths", name: "fk_repo_paths_paths", on_delete: :cascade
   add_foreign_key "repo_paths", "repos"
-  add_foreign_key "repo_paths", "repos", on_delete: :cascade
+  add_foreign_key "repo_paths", "repos", name: "fk_repo_paths_repos", on_delete: :cascade
   add_foreign_key "rfiles", "paths"
-  add_foreign_key "rfiles", "paths", on_delete: :cascade
+  add_foreign_key "rfiles", "paths", name: "fk_rfiles_paths", on_delete: :cascade
 end
